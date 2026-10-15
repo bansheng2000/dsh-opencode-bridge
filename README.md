@@ -1,6 +1,5 @@
 # DSH OpenCode Bridge
 
-[![npm](https://img.shields.io/npm/v/dsh-opencode-bridge?style=flat-square&label=npm&color=cb3837)](https://www.npmjs.com/package/dsh-opencode-bridge)
 [![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
 [![license](https://img.shields.io/github/license/bansheng2000/dsh-opencode-bridge?style=flat-square)](LICENSE)
 

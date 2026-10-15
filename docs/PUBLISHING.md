@@ -6,7 +6,7 @@
 
 ## 现状
 
-包名 **`dsh-opencode-bridge`**（本 fork）**尚未发布**。下面的流程与坑来自上游 `dsh-opencode-xdbridge` 的首次发布，换个包名即可复用。
+仓库 **已公开**：<https://github.com/bansheng2000/dsh-opencode-bridge>（默认分支 `main`，tag `v0.2.0`）。**npm 尚未发布**——本机 profile 里用的是 `file:E:/文档/deepseek-harness/dsh-opencode-bridge`，异地安装用 README 里那条 `git+https://`。下面的流程与坑来自上游 `dsh-opencode-xdbridge` 的首次发布，换个包名即可复用（若走 npm，还需按 README 顶部说明决定是否恢复 npm 徽章）。
 
 发布通道采用 **npm Trusted Publishing（OIDC）**：GitHub Actions 打 tag 即发布，
 不需要在仓库里存任何 npm token，也不需要两步验证码。
