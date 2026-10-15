@@ -15,7 +15,15 @@
  */
 
 const React = require('react')
-const primitives = require('@deepseek-ai/dsh-client-ui-primitives')
+// Platform seed, like React — but required softly: a host whose module table
+// lacks it still gets the page, just without the proxy form. A plain require
+// would take the whole browser half down with it.
+let primitives
+try {
+  primitives = require('@deepseek-ai/dsh-client-ui-primitives')
+} catch (error) {
+  console.error('[dsh-opencode-bridge] client UI primitives unavailable:', error)
+}
 const h = React.createElement
 
 /** Stable browser-plugin name. */
@@ -900,7 +908,8 @@ function apply(ctx) {
     const resolveProxyForm = () => {
       if (proxyForm !== undefined) return proxyForm
       try {
-        const scope = ctx.get?.('configForms')?.get(ENTRY_ID)
+        if (primitives === undefined) return undefined
+    const scope = ctx.get?.('configForms')?.get(ENTRY_ID)
         if (scope === undefined) return undefined
         const model = new primitives.SettingsFormModel(scope, [
           primitives.settingsTextField('proxyUrl'),
