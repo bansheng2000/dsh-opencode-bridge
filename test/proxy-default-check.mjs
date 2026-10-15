@@ -35,7 +35,7 @@ for (const name of ['runtimeProxyEnv', 'describeProxy', 'runtimeProxyEnabled']) 
 }
 
 // The switch must be read by name, not by an inverted or arbitrary variable.
-check(/OPENCODE_XDBRIDGE_RUNTIME_PROXY === '1'/.test(src), "开关读 OPENCODE_XDBRIDGE_RUNTIME_PROXY === '1'")
+check(/OPENCODE_BRIDGE_RUNTIME_PROXY === '1'/.test(src), "开关读 OPENCODE_BRIDGE_RUNTIME_PROXY === '1'")
 
 console.log(bad === 0 ? '\nPROXY DEFAULT CHECK OK' : '\nPROXY DEFAULT CHECK FAILED')
 process.exit(bad === 0 ? 0 : 1)

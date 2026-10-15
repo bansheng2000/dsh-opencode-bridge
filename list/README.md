@@ -7,7 +7,7 @@
 ```
 list/
 ├── README.md                              ← 你正在读的文件：收录机制与提交流程
-├── XDTrees__dsh-opencode-xdbridge.yml     ← 提交用的条目（原样）
+├── bansheng2000__dsh-opencode-bridge.yml     ← 提交用的条目（原样）
 └── entry.md                               ← 条目各字段的含义与取值依据
 ```
 
@@ -29,7 +29,7 @@ data/plugins/<owner>__<repo>.yml
 **文件名必须与仓库全名严格对应**，用两个下划线连接、大小写一致：
 
 ```
-data/plugins/XDTrees__dsh-opencode-xdbridge.yml
+data/plugins/bansheng2000__dsh-opencode-bridge.yml
         └──────┘  └──────────────────┘
           owner          repo
 ```
@@ -41,16 +41,16 @@ data/plugins/XDTrees__dsh-opencode-xdbridge.yml
 ```powershell
 # 1) 在 awesome-dsh-plugin 仓库上新建一个分支
 gh api -X POST repos/awesome-dsh-plugin/awesome-dsh-plugin/git/refs `
-  -f ref="refs/heads/add-dsh-opencode-xdbridge" `
+  -f ref="refs/heads/add-dsh-opencode-bridge" `
   -f sha="<main 的当前 sha>"
 
 # 2) 用本目录的条目文件在该分支上建文件
-#    data/plugins/XDTrees__dsh-opencode-xdbridge.yml
+#    data/plugins/bansheng2000__dsh-opencode-bridge.yml
 
 # 3) 开 PR
 gh pr create --repo awesome-dsh-plugin/awesome-dsh-plugin `
-  --head add-dsh-opencode-xdbridge `
-  --title "Add XDTrees/dsh-opencode-xdbridge" `
+  --head add-dsh-opencode-bridge `
+  --title "Add bansheng2000/dsh-opencode-bridge" `
   --body "Adds OpenCode Zen free models to DeepSeek Harness."
 ```
 
@@ -86,10 +86,10 @@ GitHub 的 PR 页面会显示「所有检查都通过了」「变更可以净利
 ```powershell
 # 条目文件是否已进 main（404 = 还没收录）
 curl.exe -s -o NUL -w "%{http_code}`n" `
-  https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/main/data/plugins/XDTrees__dsh-opencode-xdbridge.yml
+  https://raw.githubusercontent.com/awesome-dsh-plugin/awesome-dsh-plugin/main/data/plugins/bansheng2000__dsh-opencode-bridge.yml
 
 # 线上目录里有没有本插件
-curl.exe -s https://awesome-dsh-plugin.com/plugins.json | Select-String "dsh-opencode-xdbridge"
+curl.exe -s https://awesome-dsh-plugin.com/plugins.json | Select-String "dsh-opencode-bridge"
 ```
 
 ## 收录门槛（CI 会自动查）
@@ -105,8 +105,8 @@ curl.exe -s https://awesome-dsh-plugin.com/plugins.json | Select-String "dsh-ope
 这是最容易被误认为「白做了」的一点：**商店只是个发现渠道。**
 
 ```powershell
-dsh plugin add github:XDTrees/dsh-opencode-xdbridge
-dsh plugin add dsh-opencode-xdbridge        # 或从 npm
+dsh plugin add github:bansheng2000/dsh-opencode-bridge
+dsh plugin add dsh-opencode-bridge        # 或从 npm
 ```
 
 两种装法**现在就能用**，跟商店收录与否无关。

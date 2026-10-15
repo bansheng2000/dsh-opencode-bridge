@@ -33,7 +33,7 @@ CI 只能用 `GITHUB_TOKEN`，用它建出来的 Release 作者会固定显示�
 手动创建：
 
 ```powershell
-cd D:\DSH\dsh-opencode-xdbridge
+cd D:\DSH\dsh-opencode-bridge
 gh release create runtime-<版本> `
   --title "OpenCode runtime <版本>" `
   --notes "OpenCode 官方运行时二进制，作为插件下载器的备用源。" `

@@ -55,7 +55,7 @@ for (const skipped of profile.skippedBundles) {
 }
 
 const loaded = profile.layers.map(l => l.packageName)
-const wanted = process.env.EXPECT_BUNDLE ?? 'dsh-opencode-xdbridge'
+const wanted = process.env.EXPECT_BUNDLE ?? 'dsh-opencode-bridge'
 const ok = loaded.includes(wanted) && profile.skippedBundles.length === 0
 console.log(ok ? `\nPROFILE LOAD OK (${wanted} present)` : `\nPROFILE LOAD FAILED (want ${wanted})`)
 process.exit(ok ? 0 : 1)

@@ -115,8 +115,8 @@ const STATUS = {
   message: '运行中 · 2 个免费模型',
   runtimeVersion: '1.18.33',
   endpoint: 'http://127.0.0.1:51337/',
-  dataDir: 'D:\\deep harness\\opencode-xdbridge',
-  provider: 'opencode-xdbridge',
+  dataDir: 'D:\\deep harness\\opencode-bridge',
+  provider: 'opencode-bridge',
   probe: { running: false, pending: [] },
   activity: [],
   metrics: { discovered: 2, available: 1, pending: 1, unusable: 0 },
@@ -159,7 +159,7 @@ const options = registrations[0].options
 
 // --- Assertions ----------------------------------------------------------
 console.log('nav + title:')
-check('nav label is "OpenCode-XD"', options.label() === 'OpenCode-XD', JSON.stringify(options.label()))
+check('nav label is "OpenCode Bridge"', options.label() === 'OpenCode Bridge', JSON.stringify(options.label()))
 
 const injected = options.inject()
 let tree = render(registrations[0].component, injected)
@@ -194,13 +194,13 @@ const all = texts(tree)
 const joined = all.join('\n')
 
 console.log('\npage header:')
-check('page title is "OpenCode-XDbridge"', all.includes('OpenCode-XDbridge'), JSON.stringify(all.slice(0, 10)))
+check('page title is "OpenCode Bridge"', all.includes('OpenCode Bridge'), JSON.stringify(all.slice(0, 10)))
 check('renders the inline svg mark', all.some(s => s.includes('<svg')), 'no svg found')
 
 console.log('\nstatus + metrics:')
 check('shows the runtime version', joined.includes('1.18.33'))
 check('shows the endpoint', joined.includes('http://127.0.0.1:51337/'))
-check('shows the data dir', joined.includes('opencode-xdbridge'))
+check('shows the data dir', joined.includes('opencode-bridge'))
 check('shows all four metric labels',
   ['已发现', '可用', '待检测', '不可用'].every(k => joined.includes(k)))
 

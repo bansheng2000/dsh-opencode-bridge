@@ -39,7 +39,7 @@ git push origin vX.Y.Z
 ## 5. 验证 npm 上的版本
 
 ```powershell
-npm view dsh-opencode-xdbridge versions --registry=https://registry.npmjs.org
+npm view dsh-opencode-bridge versions --registry=https://registry.npmjs.org
 ```
 
 ## 6. 商店收录（只在首次或改描述时需要）
@@ -49,7 +49,7 @@ npm view dsh-opencode-xdbridge versions --registry=https://registry.npmjs.org
 > ⚠️ **商店收录需要别人点合并。** 提了 PR ≠ 收录成功。
 > 本项目的 PR #6129 至今停在 `open`：检查全过、`mergeable_state: clean`，
 > 但我方对该仓库**只有只读权限**，所以 GitHub 连合并按钮都不渲染。
-> 收录只影响「别人能不能搜到你」，**不影响安装**——`dsh plugin add github:XDTrees/dsh-opencode-xdbridge` 现在就能用。
+> 收录只影响「别人能不能搜到你」，**不影响安装**——`dsh plugin add github:bansheng2000/dsh-opencode-bridge` 现在就能用。
 
 ## 附：本机网络备忘
 

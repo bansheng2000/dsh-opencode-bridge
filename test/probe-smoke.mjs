@@ -5,7 +5,7 @@
  * model is listed" from "the model actually answers and can call a tool" — so
  * it gets its own check against a real runtime.
  *
- *   OPENCODE_XDBRIDGE_DATA_DIR=... node test/probe-smoke.mjs
+ *   OPENCODE_BRIDGE_DATA_DIR=... node test/probe-smoke.mjs
  */
 
 import fs from 'node:fs'
@@ -14,8 +14,8 @@ import path from 'node:path'
 import http from 'node:http'
 import { apply } from '../lib/index.js'
 
-const dataDir = process.env.OPENCODE_XDBRIDGE_DATA_DIR
-  || path.join(os.tmpdir(), 'dsh-opencode-xdbridge-probe')
+const dataDir = process.env.OPENCODE_BRIDGE_DATA_DIR
+  || path.join(os.tmpdir(), 'dsh-opencode-bridge-probe')
 
 const routes = new Map()
 const server = http.createServer((req, res) => {
@@ -53,8 +53,8 @@ const deadline = Date.now() + 600_000
 while (!ready && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 500))
 if (!ready) { console.error('FAILED: provider never registered'); process.exit(1) }
 
-const STATUS = `${origin}/plugins/dsh-opencode-xdbridge/status`
-const PROBE = `${origin}/plugins/dsh-opencode-xdbridge/models/probe`
+const STATUS = `${origin}/plugins/dsh-opencode-bridge/status`
+const PROBE = `${origin}/plugins/dsh-opencode-bridge/models/probe`
 
 const before = await fetch(STATUS).then(r => r.json())
 console.log(`before: ${JSON.stringify(before.metrics)}`)

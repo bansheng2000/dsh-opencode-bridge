@@ -18,7 +18,7 @@ release/
 
 | 通道 | 做什么 | 由什么触发 | 失败表现 |
 | --- | --- | --- | --- |
-| **npm** | 让 `dsh plugin add dsh-opencode-xdbridge` 能装 | 推 `v*` tag → GitHub Actions（OIDC） | 装插件时报版本不存在 |
+| **npm** | 让 `dsh plugin add dsh-opencode-bridge` 能装 | 推 `v*` tag → GitHub Actions（OIDC） | 装插件时报版本不存在 |
 | **GitHub Release** | 运行时二进制（57 MB）的备用下载源 | 手动，用维护者本人身份 | 跨境慢网下载变慢，但不致命 |
 | **插件商店** | 让别人在商店里搜到你 | 往 `awesome-dsh-plugin` 提 PR，**等维护者合并** | 商店搜不到，但不影响安装 |
 

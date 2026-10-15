@@ -12,7 +12,7 @@ import { findRuntime, startBackend } from '../lib/runtime.js'
 import { prepare } from '../lib/protocol.js'
 import { reasoningEfforts } from '../lib/reasoning.js'
 
-const dataDir = 'D:\\deep seek harness\\dsh-home\\opencode-xdbridge'
+const dataDir = 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
 const log = fs.createWriteStream(`${dataDir}\\variant.log`, { flags: 'a' })
 const rt = await startBackend(await findRuntime(dataDir, () => {}), dataDir, log)
 const models = await rt.backend.models()

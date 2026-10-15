@@ -17,7 +17,7 @@ import {
 
 const PROXY_KEYS = ['HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'NO_PROXY',
   'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy',
-  'OPENCODE_XDBRIDGE_RUNTIME_PROXY']
+  'OPENCODE_BRIDGE_RUNTIME_PROXY']
 
 /** Run `fn` with a scrubbed proxy environment, then restore exactly what was there. */
 function withEnv(values, fn) {
@@ -56,7 +56,7 @@ test('an unset proxy routes exactly as it did before the field existed', () => {
 
 test('a typed proxy carries the download with no environment involved', () => {
   withConfig({ url: 'http://127.0.0.1:2080' }, () => withEnv({}, () => {
-    const proxy = proxyFor('https://registry.npmjs.org/dsh-opencode-xdbridge')
+    const proxy = proxyFor('https://registry.npmjs.org/dsh-opencode-bridge')
     assert.equal(proxy.protocol, 'http:')
     assert.equal(proxy.hostname, '127.0.0.1')
     assert.equal(proxy.port, '2080')

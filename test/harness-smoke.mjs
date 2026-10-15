@@ -7,7 +7,7 @@
  *
  * It proves the provider works end to end without launching the desktop app.
  *
- *   OPENCODE_XDBRIDGE_E2E=1 node test/harness-smoke.mjs
+ *   OPENCODE_BRIDGE_E2E=1 node test/harness-smoke.mjs
  */
 
 import fs from 'node:fs'
@@ -18,7 +18,7 @@ import { createShim } from '../lib/shim.js'
 import { BridgeCatalog } from '../lib/catalog.js'
 import { createBridgeAdapter } from '../lib/adapter.js'
 
-const dataDir = process.env.OPENCODE_XDBRIDGE_E2E_DIR || path.join(os.tmpdir(), 'dsh-opencode-xdbridge-e2e')
+const dataDir = process.env.OPENCODE_BRIDGE_E2E_DIR || path.join(os.tmpdir(), 'dsh-opencode-bridge-e2e')
 fs.mkdirSync(dataDir, { recursive: true })
 const logStream = fs.createWriteStream(path.join(dataDir, 'harness-smoke.log'), { flags: 'a' })
 

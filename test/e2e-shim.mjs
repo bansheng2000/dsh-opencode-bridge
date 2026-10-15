@@ -13,7 +13,7 @@ import { findRuntime, startBackend } from '../lib/runtime.js'
 import { BridgeCatalog } from '../lib/catalog.js'
 import { createShim } from '../lib/shim.js'
 
-const dataDir = 'D:\\deep seek harness\\dsh-home\\opencode-xdbridge'
+const dataDir = 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
 const log = fs.createWriteStream(`${dataDir}\\e2e-shim.log`, { flags: 'a' })
 const rt = await startBackend(await findRuntime(dataDir, () => {}), dataDir, log)
 

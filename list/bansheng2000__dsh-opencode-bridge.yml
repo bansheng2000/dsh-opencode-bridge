@@ -1,5 +1,5 @@
-url: https://github.com/XDTrees/dsh-opencode-xdbridge
-name: XDTrees/dsh-opencode-xdbridge
+url: https://github.com/bansheng2000/dsh-opencode-bridge
+name: bansheng2000/dsh-opencode-bridge
 category: model
 description:
   en: 'Adds OpenCode Zen free models to DeepSeek Harness as one provider, backed by a managed, isolated OpenCode runtime, with a Settings page that lists each model and tests it.'

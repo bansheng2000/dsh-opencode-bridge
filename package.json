@@ -1,16 +1,16 @@
 {
-  "name": "dsh-opencode-xdbridge-proxy",
+  "name": "dsh-opencode-bridge",
   "version": "0.2.0",
   "description": "Run OpenCode Zen's free models inside DeepSeek Harness through a managed, isolated OpenCode runtime.",
   "license": "MIT",
-  "author": "XDTrees",
-  "homepage": "https://github.com/XDTrees/dsh-opencode-xdbridge#readme",
+  "author": "bansheng2000",
+  "homepage": "https://github.com/bansheng2000/dsh-opencode-bridge#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/XDTrees/dsh-opencode-xdbridge.git"
+    "url": "git+https://github.com/bansheng2000/dsh-opencode-bridge.git"
   },
   "bugs": {
-    "url": "https://github.com/XDTrees/dsh-opencode-xdbridge/issues"
+    "url": "https://github.com/bansheng2000/dsh-opencode-bridge/issues"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -48,7 +48,9 @@
     "opencode",
     "opencode-zen",
     "free-models",
-    "model-provider"
+    "model-provider",
+    "opencode-bridge",
+    "outbound-proxy"
   ],
   "dsh": {
     "bundle": {

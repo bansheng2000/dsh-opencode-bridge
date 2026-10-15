@@ -1,14 +1,14 @@
-# DSH OpenCode XD Bridge
+# DSH OpenCode Bridge
 
-[![npm](https://img.shields.io/npm/v/dsh-opencode-xdbridge?style=flat-square&label=npm&color=cb3837)](https://www.npmjs.com/package/dsh-opencode-xdbridge)
+[![npm](https://img.shields.io/npm/v/dsh-opencode-bridge?style=flat-square&label=npm&color=cb3837)](https://www.npmjs.com/package/dsh-opencode-bridge)
 [![awesome · DSH plugin](https://awesome-dsh-plugin.com/badge.svg)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
-[![license](https://img.shields.io/github/license/XDTrees/dsh-opencode-xdbridge?style=flat-square)](LICENSE)
+[![license](https://img.shields.io/github/license/bansheng2000/dsh-opencode-bridge?style=flat-square)](LICENSE)
 
 在 DeepSeek Harness 里使用 **OpenCode Zen 的免费模型**。
 
 ## 这是什么
 
-把 [OpenCode](https://opencode.ai/) 的免费模型（big-pickle、LongCat、MiMo、Nemotron、Space Bunny 等）接进 DSH 的模型选择器，作为 `opencode-xdbridge` 分组使用，并在**设置 → OpenCode-XD** 里提供一个可视化的交互入口。
+把 [OpenCode](https://opencode.ai/) 的免费模型（big-pickle、LongCat、MiMo、Nemotron、Space Bunny 等）接进 DSH 的模型选择器，作为 `opencode-bridge` 分组使用，并在**设置 → OpenCode Bridge** 里提供一个可视化的交互入口。
 
 ## 为什么必须这么做
 
@@ -31,21 +31,29 @@ FreeTierError: OpenCode's free tier can only be used from within OpenCode
 
 ## 安装
 
-> **这是 `dsh-opencode-xdbridge` 的本地 fork：包名 `dsh-opencode-xdbridge-proxy`，版本 `0.2.0`。**
-> 它在上游未发布的 `main` 之上加了「出站代理」配置面。下面 npm / GitHub 两条是**上游原插件**的地址，
-> 本 fork 目前按本地路径安装（改名后不再与上游同名，两者互不覆盖）。
+> **这是 [XDTrees/dsh-opencode-xdbridge](https://github.com/XDTrees/dsh-opencode-xdbridge) 的 fork：包名 `dsh-opencode-bridge`，版本 `0.2.0`。**
+> 相对上游（`main` 分支、尚未发布）多了「出站代理」配置面；上游 npm 上的 0.1.0 **没有**这些改动，两者包名不同、可以并存。
+> 差异见 [CHANGELOG](./CHANGELOG.md)。
 
-**本地 fork（当前用法）**：在 profile 的 `package.json` 里加依赖，并把包名加进 `dsh.profile.bundles`：
+**从 GitHub 安装（本仓库，推荐）**：
+
+```sh
+dsh plugin --profile <profile> add git+https://github.com/bansheng2000/dsh-opencode-bridge.git
+```
+
+> 用 `git+https://` 而不是 `github:` 简写：本机实测简写会走 `git+ssh://`，没有 ssh key 的机器直接 `Permission denied (publickey)`。
+
+**本地目录安装（开发用）**：在 profile 的 `package.json` 里加依赖，并把包名加进 `dsh.profile.bundles`：
 
 ```json
 "dependencies": {
-  "dsh-opencode-xdbridge-proxy": "file:E:/文档/deepseek-harness/dsh-opencode-xdbridge-proxy"
+  "dsh-opencode-bridge": "file:E:/文档/deepseek-harness/dsh-opencode-bridge"
 }
 ```
 
 然后 `pnpm install` 并重启 DSH。
 
-**上游原插件（仅供参考）**：
+**上游原插件（参考，本 fork 的来源）**：
 
 ```sh
 dsh plugin --profile <profile> add dsh-opencode-xdbridge
@@ -56,10 +64,10 @@ dsh plugin --profile <profile> add github:XDTrees/dsh-opencode-xdbridge
 
 ```powershell
 # 1. 链接插件到 profile
-New-Item -ItemType Junction -Path "$env:USERPROFILE\.dsh\profiles\desktop\node_modules\dsh-opencode-xdbridge" `
-  -Target "D:\DSH\dsh-opencode-xdbridge"
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.dsh\profiles\desktop\node_modules\dsh-opencode-bridge" `
+  -Target "D:\DSH\dsh-opencode-bridge"
 
-# 2. 在 profile package.json 的 dsh.profile.bundles 里追加 "dsh-opencode-xdbridge"
+# 2. 在 profile package.json 的 dsh.profile.bundles 里追加 "dsh-opencode-bridge"
 
 # 3. 重启 DSH Desktop
 ```
@@ -84,15 +92,15 @@ New-Item -ItemType Junction -Path "$env:USERPROFILE\.dsh\profiles\desktop\node_m
 set OPENCODE_BINARY_PATH=C:\path\to\opencode.exe
 
 # 方式二：指定一个下载源
-set OPENCODE_XDBRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.33.tgz
+set OPENCODE_BRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.33.tgz
 ```
 
 ## 使用
 
 重启后：
 
-1. **模型选择器**里会出现 **OpenCode 免费模型** 分组（provider 为 `opencode-xdbridge`），直接选即可。
-2. **设置 → OpenCode-XD** 是插件的交互面板（布局参考 OW Bridge 控制面板）。
+1. **模型选择器**里会出现 **OpenCode 免费模型** 分组（provider 为 `opencode-bridge`），直接选即可。
+2. **设置 → OpenCode Bridge** 是插件的交互面板（布局参考 OW Bridge 控制面板）。
 
 可用的模型随上游变化，插件每次启动都会重新读取。
 
@@ -168,11 +176,11 @@ set OPENCODE_XDBRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.
 
 ## 配置
 
-配置写在 profile 的 `settings.yaml` 里，命名空间 `opencode-xdbridge`：
+配置写在 profile 的 `settings.yaml` 里，命名空间 `opencode-bridge`：
 
 ```yaml
-opencode-xdbridge:
-  dataDir: D:\DSH-data\opencode-xdbridge   # 运行时/日志存放位置
+opencode-bridge:
+  dataDir: D:\DSH-data\opencode-bridge   # 运行时/日志存放位置
   binaryPath: C:\path\to\opencode.exe     # 用已有的 OpenCode，不下载
   runtimeVersion: 1.18.33                 # 固定版本
   autoRefresh: true                       # 启动后重新读一次模型清单
@@ -182,14 +190,14 @@ opencode-xdbridge:
 
 | 字段 | 说明 | 默认 |
 | --- | --- | --- |
-| `dataDir` | 受管运行时、日志、状态目录 | `<DSH home>/opencode-xdbridge` |
+| `dataDir` | 受管运行时、日志、状态目录 | `<DSH home>/opencode-bridge` |
 | `binaryPath` | 使用已有的 OpenCode 二进制 | 自动下载官方版本 |
 | `runtimeVersion` | 固定 OpenCode 版本 | 最新版 |
 | `autoRefresh` | 启动 15 秒后重读一次免费模型清单 | `true` |
 | `proxyUrl` | 下载运行时、状态请求走这个 HTTP 代理；留空则沿用环境变量代理 | 不使用代理 |
 | `proxyRuntime` | 把代理也传给受管 OpenCode 运行时 | `false` |
 
-也可用环境变量 `OPENCODE_XDBRIDGE_DATA_DIR` 指定数据目录。
+也可用环境变量 `OPENCODE_BRIDGE_DATA_DIR` 指定数据目录。
 
 ### 出站代理
 
@@ -203,7 +211,7 @@ opencode-xdbridge:
 
 ```
 DSH Harness
-   │  (pi-ai provider "opencode-xdbridge")
+   │  (pi-ai provider "opencode-bridge")
    ▼
 lib/adapter.js ──── pi-ai createProvider + openAICompletionsApi
    │
@@ -250,7 +258,7 @@ OpenCode Zen 免费模型
 发新版本的逐步操作见 [`release/checklist.md`](./release/checklist.md)。
 
 > 商店收录只是**发现渠道**。提了 PR 不等于会显示，但不影响安装——
-> `dsh plugin add dsh-opencode-xdbridge` 与 `dsh plugin add github:XDTrees/dsh-opencode-xdbridge` 都是现在就能用的。
+> `dsh plugin add dsh-opencode-bridge` 与 `dsh plugin add github:bansheng2000/dsh-opencode-bridge` 都是现在就能用的。
 
 ## 安全设计
 
@@ -266,7 +274,7 @@ OpenCode Zen 免费模型
 npm run build        # 把 src/client/index.js 包成 lib/client.js
 npm test             # 单元测试 + 四个独立校验（bundle / 渲染 / 声明 / 代理默认值），无需网络
 npm run test:smoke   # apply() 注册 + 真实 PiAiAdapter + 检测流程
-npm run test:e2e     # 端到端（需 OPENCODE_XDBRIDGE_E2E=1）
+npm run test:e2e     # 端到端（需 OPENCODE_BRIDGE_E2E=1）
 ```
 
 单独跑：
@@ -284,7 +292,7 @@ node test/profile-load-check.mjs        # 用 DSH 自己的 loader 校验 profil
 
 > **改了 `src/client/index.js` 必须重新 `npm run build`**，否则 DSH 拿到的是旧的 `lib/client.js`。
 
-集成测试会真实下载/使用官方 OpenCode 二进制并产生真实上游请求，因此默认关闭，需要 `OPENCODE_XDBRIDGE_E2E=1` 显式开启。
+集成测试会真实下载/使用官方 OpenCode 二进制并产生真实上游请求，因此默认关闭，需要 `OPENCODE_BRIDGE_E2E=1` 显式开启。
 
 ## 已知限制
 
@@ -292,12 +300,13 @@ node test/profile-load-check.mjs        # 用 DSH 自己的 loader 校验 profil
 - **首次启动要下载**：约 60 MB，之后复用缓存。
 - **依赖 OpenCode 客户端接口**（不是官方开放 API），OpenCode 更新后插件可能需要跟着调整。
 - 免费额度被上游限流时，请求会失败并报出上游原始错误。
-- **商店收录待维护者合并**：收录条目已提交（PR #6129），但插件商店需要对方点合并才会显示。这只影响「别人能不能搜到」，**不影响安装**——`dsh plugin add dsh-opencode-xdbridge` 现在就能用。详见 [`list/`](./list/)。
-- **界面显示名与包名不同**：包名必须全小写（`dsh-opencode-xdbridge`，npm 规范），设置页显示为 `OpenCode-XD` / `OpenCode-XDbridge`。
+- **商店收录待维护者合并**：本 fork 还没有提交商店收录（`list/` 里是条目模板）。这只影响「别人能不能搜到」，**不影响安装**——`dsh plugin add dsh-opencode-bridge` 现在就能用。详见 [`list/`](./list/)。
+- **界面显示名与包名不同**：包名必须全小写（`dsh-opencode-bridge`，npm 规范），设置页显示为 `OpenCode Bridge` / `OpenCode Bridge`。
 
 ## 致谢
 
 - [OpenCode](https://opencode.ai/) —— 本插件运行并复用其官方二进制与本地服务接口。
+- [XDTrees/dsh-opencode-xdbridge](https://github.com/XDTrees/dsh-opencode-xdbridge) —— 本 fork 的上游项目（MIT）：受管隔离的 OpenCode 运行时、模型目录、检测逻辑与设置页布局都源自它，本 fork 只新增出站代理配置面。
 - [louchi1984-coder/ow-bridge](https://github.com/louchi1984-coder/ow-bridge) —— 验证了"隔离 OpenCode + 本地 OpenAI 兼容端点 + 审批拦截"这一整体思路的可行性，其控制面板也是本插件设置页布局与交互逻辑的参考。本项目为独立实现，未复制其代码。
 
 ## 许可证

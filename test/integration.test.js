@@ -8,9 +8,9 @@
  * It downloads/uses the official OpenCode binary and makes real upstream calls,
  * so it is opt-in:
  *
- *   OPENCODE_XDBRIDGE_E2E=1 node --test test/integration.test.js
+ *   OPENCODE_BRIDGE_E2E=1 node --test test/integration.test.js
  *
- * @module dsh-opencode-xdbridge/test/integration
+ * @module dsh-opencode-bridge/test/integration
  */
 
 import { test, before, after } from 'node:test'
@@ -22,9 +22,9 @@ import { findRuntime, startBackend } from '../lib/runtime.js'
 import { createShim } from '../lib/shim.js'
 import { BridgeCatalog } from '../lib/catalog.js'
 
-const enabled = process.env.OPENCODE_XDBRIDGE_E2E === '1'
-const dataDir = process.env.OPENCODE_XDBRIDGE_E2E_DIR
-  || path.join(os.tmpdir(), 'dsh-opencode-xdbridge-e2e')
+const enabled = process.env.OPENCODE_BRIDGE_E2E === '1'
+const dataDir = process.env.OPENCODE_BRIDGE_E2E_DIR
+  || path.join(os.tmpdir(), 'dsh-opencode-bridge-e2e')
 
 let runtime
 let shim

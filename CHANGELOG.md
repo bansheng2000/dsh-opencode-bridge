@@ -2,12 +2,13 @@
 
 ## 0.2.0
 
-基于上游 `main`（尚未发布到 npm）的本地 fork。相对上游：**改了包名**、把原本只有环境变量能驱动的出站代理做成设置项。
+基于上游 [XDTrees/dsh-opencode-xdbridge](https://github.com/XDTrees/dsh-opencode-xdbridge) 的 `main`（尚未发布到 npm）的 fork。这是新包名的第一次发布，没有兼容负担。
 
 ### 变更
 
-- 包名 `dsh-opencode-xdbridge` → `dsh-opencode-xdbridge-proxy`，与上游同名包解耦（可以并存安装、不互相覆盖）。版本 `0.1.0` → `0.2.0`。
-- 宿主入口 id 仍是 `llm-opencode-xdbridge`、设置命名空间仍是 `opencode-xdbridge`、provider 仍是 `opencode-xdbridge`、数据目录仍是 `<DSH home>/opencode-xdbridge`：改名只动包标识，**已下载的运行时和已有设置不用重来**。
+- 包名 `dsh-opencode-xdbridge` → `dsh-opencode-bridge`，并同步改名：宿主入口 id `llm-opencode-bridge`、设置命名空间与 provider `opencode-bridge`、设置页路由 `/plugins/dsh-opencode-bridge/*`、环境变量 `OPENCODE_BRIDGE_*`。
+- 数据目录默认值从 `<DSH home>/opencode-xdbridge` 变为 `<DSH home>/opencode-bridge`：老目录里的运行时（约 57 MB）可以手工搬过去，否则首次启动会重新下载。
+- 设置页显示名改为 **OpenCode Bridge**（原 OpenCode-XD / OpenCode-XDbridge）。
 
 ### 新增
 
@@ -22,7 +23,7 @@
 
 ### 说明
 
-- 零行为变化：不填 `proxyUrl`、不设 `OPENCODE_XDBRIDGE_RUNTIME_PROXY=1` 时，代理变量依旧不进受管运行时，与 0.1.0 一致。
+- 零行为变化：不填 `proxyUrl`、不设 `OPENCODE_BRIDGE_RUNTIME_PROXY=1` 时，代理变量依旧不进受管运行时，与 0.1.0 一致。
 - 版本号仍是 `0.1.0`：profile 里声明的是 `^0.1.0`，对 0.x 只覆盖 `>=0.1.0 <0.2.0`，改版本号必须同步改 profile。
 
 ## 0.1.0
@@ -31,14 +32,14 @@
 
 ### 模型接入
 
-- 在 DeepSeek Harness 里使用 OpenCode Zen 的免费模型，作为 `opencode-xdbridge` provider 分组。
+- 在 DeepSeek Harness 里使用 OpenCode Zen 的免费模型，作为 `opencode-bridge` provider 分组。
 - 受管、隔离的 OpenCode 运行时：独立 XDG 根、每次启动随机服务密码、关闭自动更新与分享；只转发常规系统与网络变量，不读取也不写入用户自己 OpenCode 的配置、凭据和会话。
 - 只列出运行时报告的**每一个**计费维度都为 0 的模型，不会悄悄花掉额度。
 - 模型清单随上游变化，每次启动重新读取。
 
 ### 设置页
 
-- 设置 → **OpenCode-XD** 提供交互面板：服务状态、指标条、运行时信息、模型目录与详情。
+- 设置 → **OpenCode Bridge** 提供交互面板：服务状态、指标条、运行时信息、模型目录与详情。
 - 每个模型一行：名称、推荐用途、能力徽章、状态徽章、最近响应耗时；点击该行在**其正下方**展开详情。
 - 三个操作：读取模型、检测全部、重启运行时。
 - 推荐用途按模型实测能力整理；未收录的新模型会按能力自动生成一句话，不留空。

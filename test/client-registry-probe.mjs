@@ -15,7 +15,7 @@ import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
 const HOME = process.argv[2] ?? 'D:\\deep seek harness\\dsh-home'
-const PLUGIN = process.argv[3] ?? 'dsh-opencode-xdbridge'
+const PLUGIN = process.argv[3] ?? 'dsh-opencode-bridge'
 const APP = 'D:/DSH/DSH Desktop/resources/app/node_modules'
 
 const installed = path.join(HOME, 'profiles', 'desktop', 'node_modules', PLUGIN)

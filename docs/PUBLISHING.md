@@ -6,7 +6,7 @@
 
 ## 现状
 
-包名 **`dsh-opencode-xdbridge`** 已注册，已发布版本 **`0.1.0`**。
+包名 **`dsh-opencode-bridge`**（本 fork）**尚未发布**。下面的流程与坑来自上游 `dsh-opencode-xdbridge` 的首次发布，换个包名即可复用。
 
 发布通道采用 **npm Trusted Publishing（OIDC）**：GitHub Actions 打 tag 即发布，
 不需要在仓库里存任何 npm token，也不需要两步验证码。
@@ -40,7 +40,7 @@ npm login --auth-type=web --registry=https://registry.npmjs.org
 npm whoami --registry=https://registry.npmjs.org
 
 # 4) 首次发布
-cd D:\DSH\dsh-opencode-xdbridge
+cd D:\DSH\dsh-opencode-bridge
 npm publish --registry=https://registry.npmjs.org --access public
 ```
 
@@ -52,13 +52,13 @@ npm publish --registry=https://registry.npmjs.org --access public
 
 包发布成功后，到 npmjs.com 配置：
 
-**npmjs.com → 搜索 `dsh-opencode-xdbridge` → 进入包页 → Settings →
+**npmjs.com → 搜索 `dsh-opencode-bridge` → 进入包页 → Settings →
 Trusted Publisher → 选 GitHub Actions**，填：
 
 | 字段 | 值 |
 | --- | --- |
-| Organization or user | `XDTrees` |
-| Repository | `dsh-opencode-xdbridge` |
+| Organization or user | `bansheng2000` |
+| Repository | `dsh-opencode-bridge` |
 | Workflow filename | `release.yml` |
 | Environment name | 留空 |
 | Allowed actions | 至少保留 `npm stage publish`；**建议一并勾上 direct publish** |
@@ -68,7 +68,7 @@ Trusted Publisher → 选 GitHub Actions**，填：
 ### 第 3 步：以后每次发版
 
 ```powershell
-cd D:\DSH\dsh-opencode-xdbridge
+cd D:\DSH\dsh-opencode-bridge
 # 1) 改 package.json 的 version，并同步写 CHANGELOG.md
 # 2) 提交
 git add -A

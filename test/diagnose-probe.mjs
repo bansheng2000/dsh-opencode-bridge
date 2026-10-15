@@ -14,7 +14,7 @@ import { prepare } from '../lib/protocol.js'
 import { probeBody, probeModel, formatUnsupported, PROBE_ATTEMPT_TIMEOUT_MS } from '../lib/probe.js'
 
 // Reuse the live install's runtime binary so this does not re-download.
-const LIVE = 'D:\\deep seek harness\\dsh-home\\opencode-xdbridge'
+const LIVE = 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
 const dataDir = 'D:\\DSH\\_diag-ocxb'
 fs.rmSync(dataDir, { recursive: true, force: true })
 fs.mkdirSync(path.join(dataDir, 'runtime'), { recursive: true })

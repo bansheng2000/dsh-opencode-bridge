@@ -1,9 +1,9 @@
 # npm
 
-包名 **`dsh-opencode-xdbridge`**（全小写——npm 不接受大写字母，界面显示名 `OpenCode-XD` / `OpenCode-XDbridge` 不受影响）。
+包名 **`dsh-opencode-bridge`**（全小写——npm 不接受大写字母，界面显示名 `OpenCode Bridge` / `OpenCode Bridge` 不受影响）。
 
-- 包页：https://www.npmjs.com/package/dsh-opencode-xdbridge
-- 仓库：https://github.com/XDTrees/dsh-opencode-xdbridge
+- 包页：https://www.npmjs.com/package/dsh-opencode-bridge
+- 仓库：https://github.com/bansheng2000/dsh-opencode-bridge
 
 ## 已发布版本
 
@@ -24,12 +24,12 @@
 
 ### 一次性绑定（若尚未完成）
 
-npmjs.com → `dsh-opencode-xdbridge` → Settings → **Trusted Publisher** → GitHub Actions：
+npmjs.com → `dsh-opencode-bridge` → Settings → **Trusted Publisher** → GitHub Actions：
 
 | 字段 | 值 |
 | --- | --- |
-| Organization or user | `XDTrees` |
-| Repository | `dsh-opencode-xdbridge` |
+| Organization or user | `bansheng2000` |
+| Repository | `dsh-opencode-bridge` |
 | Workflow filename | `release.yml`（只填文件名，要带 `.yml`） |
 | Environment name | 留空 |
 | Allowed actions | 至少 `npm stage publish`；**建议一并勾上 direct publish** |
@@ -48,7 +48,7 @@ npmjs.com → `dsh-opencode-xdbridge` → Settings → **Trusted Publisher** →
 ## 发布一个新版本
 
 ```powershell
-cd D:\DSH\dsh-opencode-xdbridge
+cd D:\DSH\dsh-opencode-bridge
 npm run build          # 改了 src/client/index.js 的话
 # 1) 改 package.json 的 version，并在 CHANGELOG.md 写下同一版本号的小节
 git add -A

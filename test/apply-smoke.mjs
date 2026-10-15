@@ -15,8 +15,8 @@ import path from 'node:path'
 import http from 'node:http'
 import { apply, name, inject, BRIDGE_PROVIDER, BRIDGE_DISPLAY_NAME, BRIDGE_SETTINGS_NS } from '../lib/index.js'
 
-const dataDir = process.env.OPENCODE_XDBRIDGE_DATA_DIR
-  || path.join(os.tmpdir(), 'dsh-opencode-xdbridge-apply')
+const dataDir = process.env.OPENCODE_BRIDGE_DATA_DIR
+  || path.join(os.tmpdir(), 'dsh-opencode-bridge-apply')
 fs.rmSync(dataDir, { recursive: true, force: true })
 
 const calls = { adapter: [], directory: [], discovery: [], routes: [] }
@@ -74,7 +74,7 @@ console.log('\n=== webServer routes ===')
 for (const route of calls.routes) console.log(`  ${route}`)
 
 console.log('\n=== GET status (as the page does) ===')
-const status = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/status`).then(r => r.json())
+const status = await fetch(`${origin}/plugins/dsh-opencode-bridge/status`).then(r => r.json())
 console.log(`  phase=${status.phase} provider=${status.provider}`)
 console.log(`  runtimeVersion=${status.runtimeVersion}`)
 console.log(`  endpoint=${status.endpoint}`)
@@ -85,13 +85,13 @@ for (const model of status.models.slice(0, 3)) {
 }
 
 console.log('\n=== POST refresh ===')
-const refreshed = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/models/refresh`, {
+const refreshed = await fetch(`${origin}/plugins/dsh-opencode-bridge/models/refresh`, {
   method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
 }).then(r => r.json())
 console.log(`  ${JSON.stringify(refreshed)}`)
 
 console.log('\n=== GET model detail ===')
-const detail = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/model?id=${encodeURIComponent(status.models[0].id)}`).then(r => r.json())
+const detail = await fetch(`${origin}/plugins/dsh-opencode-bridge/model?id=${encodeURIComponent(status.models[0].id)}`).then(r => r.json())
 console.log(`  ${detail.id} → ${detail.name}`)
 
 console.log('\n=== model discovery ===')
@@ -101,11 +101,11 @@ const foreign = await discovered({ provider: 'someone-else' })
 console.log(`  ${foreign.length} for a foreign provider (expected 0)`)
 
 console.log('\n=== guards ===')
-const badOrigin = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/status`, { headers: { Origin: 'https://evil.example' } })
+const badOrigin = await fetch(`${origin}/plugins/dsh-opencode-bridge/status`, { headers: { Origin: 'https://evil.example' } })
 console.log(`  cross-origin status → HTTP ${badOrigin.status} (expected 403)`)
-const wrongMethod = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/status`, { method: 'POST' })
+const wrongMethod = await fetch(`${origin}/plugins/dsh-opencode-bridge/status`, { method: 'POST' })
 console.log(`  wrong method → HTTP ${wrongMethod.status} (expected 405)`)
-const missing = await fetch(`${origin}/plugins/dsh-opencode-xdbridge/model?id=nope`).then(r => r.json())
+const missing = await fetch(`${origin}/plugins/dsh-opencode-bridge/model?id=nope`).then(r => r.json())
 console.log(`  unknown model → ${JSON.stringify(missing)}`)
 
 const ok = calls.adapter[0].providers[0] === BRIDGE_PROVIDER
