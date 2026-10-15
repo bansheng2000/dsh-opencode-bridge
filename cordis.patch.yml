@@ -3,4 +3,4 @@
 # Harness model provider. Nothing here touches the user's own OpenCode install.
 - insert:
     - id: llm-opencode-xdbridge
-      name: dsh-opencode-xdbridge
+      name: dsh-opencode-xdbridge-proxy

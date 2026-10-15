@@ -31,15 +31,24 @@ FreeTierError: OpenCode's free tier can only be used from within OpenCode
 
 ## 安装
 
-**从 npm（推荐，最省事）**：
+> **这是 `dsh-opencode-xdbridge` 的本地 fork：包名 `dsh-opencode-xdbridge-proxy`，版本 `0.2.0`。**
+> 它在上游未发布的 `main` 之上加了「出站代理」配置面。下面 npm / GitHub 两条是**上游原插件**的地址，
+> 本 fork 目前按本地路径安装（改名后不再与上游同名，两者互不覆盖）。
+
+**本地 fork（当前用法）**：在 profile 的 `package.json` 里加依赖，并把包名加进 `dsh.profile.bundles`：
+
+```json
+"dependencies": {
+  "dsh-opencode-xdbridge-proxy": "file:E:/文档/deepseek-harness/dsh-opencode-xdbridge-proxy"
+}
+```
+
+然后 `pnpm install` 并重启 DSH。
+
+**上游原插件（仅供参考）**：
 
 ```sh
 dsh plugin --profile <profile> add dsh-opencode-xdbridge
-```
-
-**从 GitHub 源码**：
-
-```sh
 dsh plugin --profile <profile> add github:XDTrees/dsh-opencode-xdbridge
 ```
 

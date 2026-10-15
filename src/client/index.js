@@ -17,7 +17,7 @@ const React = require('react')
 const h = React.createElement
 
 /** Stable browser-plugin name. */
-const name = 'dsh-opencode-xdbridge-client'
+const name = 'dsh-opencode-xdbridge-proxy-client'
 
 /**
  * Client services required by this page.

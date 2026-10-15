@@ -1,8 +1,13 @@
 # Changelog
 
-## 未发布（本地 fork）
+## 0.2.0
 
-基于上游 `main`（尚未发布到 npm）的本地分支，把原本只有环境变量能驱动的出站代理做成设置项。
+基于上游 `main`（尚未发布到 npm）的本地 fork。相对上游：**改了包名**、把原本只有环境变量能驱动的出站代理做成设置项。
+
+### 变更
+
+- 包名 `dsh-opencode-xdbridge` → `dsh-opencode-xdbridge-proxy`，与上游同名包解耦（可以并存安装、不互相覆盖）。版本 `0.1.0` → `0.2.0`。
+- 宿主入口 id 仍是 `llm-opencode-xdbridge`、设置命名空间仍是 `opencode-xdbridge`、provider 仍是 `opencode-xdbridge`、数据目录仍是 `<DSH home>/opencode-xdbridge`：改名只动包标识，**已下载的运行时和已有设置不用重来**。
 
 ### 新增
 
