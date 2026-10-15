@@ -16,9 +16,9 @@
 - 配置项 `proxyRuntime`：是否把代理也转发给受管 OpenCode 运行时（默认关，原因见 README「出站代理」）。
 - 设置页状态行「出站代理」（原「运行时代理」）：显示生效中的代理，不含凭据；未配置时显示「直连（默认）」。
 - 从 `lib/runtime.js` 导出 `configureProxy()` / `describeProxy()` / `proxyFor()` / `tunnelledSocket()`，供测试与复用。
-- **代理字段现在能在设置界面里填**：`Config` 的 `proxyUrl` / `proxyRuntime` 改为 `volatile()`。此前 schema 里一个 volatile 字段都没有，Harness 因此完全不渲染配置表单（`dsh-settings` 的 `volatileForm()` 无命中即返回 `[]`），表现就是「找不到填代理的地方」——不是没重启，是界面压根没有这两项。入口：设置 → 插件 → 已安装 → `dsh-opencode-bridge` → 组件 `llm-opencode-bridge` → 「配置 llm-opencode-bridge」。
-- 代理改动**保存即生效，不用重启**：`configureProxy()` 会在启动、重启与读取状态前重新读取字段当前值，`volatile` 包装由 `lib/runtime.js` 的 `fieldValue()` 解开。
-- 设置页状态行在未配置代理时补上填写位置提示（中英双语）。
+- **代理字段现在能在设置界面里填**：`Config` 的 `proxyUrl` / `proxyRuntime` 改为 `volatile()`（`dsh-settings` 的 `volatileForm()` 只会列出声明了 volatile 的字段）。只加 volatile 还不够——DSH 里没有任何东西会替第三方插件渲染配置表单（插件管理页的 `plugins.row.config` / `plugins.bundle.config` 槽位无人占用，第三方没有「配置」按钮），所以表单由本插件自己的 client 半边用 `@deepseek-ai/dsh-client-ui-primitives` 的 `SettingsFormModel` / `SettingsForm` 渲染，读 `ctx.get('configForms').get('llm-opencode-bridge')`。入口：**设置 → OpenCode Bridge → 出站代理卡片**。宿主没提供 `configForms` 时降级为无表单页面（不崩、不影响原有功能）。`configForms` **故意不写进 client 的 `inject`**：某条宿主线没有该服务时，`apply` 会被 inject 卡死、整页消失。
+- 代理改动**保存即生效，不用重启插件**：`configureProxy()` 会在启动、重启与读取状态前重新读取字段当前值，`volatile` 包装由 `lib/runtime.js` 的 `fieldValue()` 解开。（改 `lib/client.js` 仍需重启 DSH。）
+- 设置页状态行在**没有表单**（宿主缺 `configForms`）且未配置代理时，补上填写位置提示（中英双语）。
 
 ### 修复
 

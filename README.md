@@ -178,9 +178,11 @@ set OPENCODE_BRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.33
 
 **填代理的地方**（两个代理字段是插件配置里仅有的可编辑项）：
 
-> 设置 → 插件 → 已安装 → `dsh-opencode-bridge` → 组件 `llm-opencode-bridge` → 「配置 llm-opencode-bridge」
+> 设置 → **OpenCode Bridge**（左栏本插件自己的页面）→ **出站代理**卡片 → 填地址 / 拨开关 → **保存**
 
-表单里的「出站代理」和「是否转发给运行时」保存后**不用重启**：下载与运行时在下次启动时读取，状态行即时更新。（插件卡片上的状态行也会直接写出这个路径。）
+表单就在本插件自己的设置页里，不用去「设置 → 插件」翻包详情：DSH 不会替第三方插件渲染配置表单（插件管理页的配置槽位没有任何占用者），所以表单由本插件自己的 client 半边用 `@deepseek-ai/dsh-client-ui-primitives` 渲染。万一宿主没提供 `configForms` 服务（老版本），页面照常显示、只是没有表单，状态行旁边会退化成一行「填写位置」文字提示。
+
+保存后**不用重启插件**：两个字段是 volatile 的，`apply()` 通过闭包每次读它们的当前值。但**改完 `lib/client.js` 后必须重启 DSH**，客户端 bundle 只在启动时加载。
 
 其余字段目前只能在 profile 的 loader 配置里写，即在 profile 的 `cordis.yml` 里该条目下加 `config:`（条目 id 是 `llm-opencode-bridge`）：
 
@@ -212,7 +214,7 @@ set OPENCODE_BRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.33
 - 填了 `proxyUrl` 就用它（`http://host:port`，也接受裸 `host:port`）。`NO_PROXY` 仍然优先于它，`127.0.0.1 / localhost / ::1` 永远直连。
 - `proxyRuntime` **默认关，而且建议保持关**：实测把代理转发给受管运行时后，一次普通 completion 90 秒不返回（上游报 `SessionPrompt.createUserMessage` 500 UnknownError），完全不转发时同一调用 3.8 秒完成。只有运行时确实没有直连出口时才打开。
 - 只支持 HTTP 代理，不支持 SOCKS5：`proxyRuntime` 打开时配置值只写入 `HTTP_PROXY` / `HTTPS_PROXY`，**故意不写 `ALL_PROXY`**（那个变量带 SOCKS 语义）。
-- 状态行「出站代理」显示当前生效的代理描述；**从不显示凭据**，未配置时显示「直连（默认）」，并在旁边写出填写位置。
+- 状态行「出站代理」显示当前生效的代理描述；**从不显示凭据**，未配置时显示「直连（默认）」；只有在没有配置表单（宿主缺 `configForms`）时，才在旁边写出填写位置作为降级提示。
 - 改完即生效，不用重启：两个字段是 `volatile` 的，`apply()` 通过闭包每次读它们的当前值（`lib/runtime.js` 的 `configureProxy` 负责解包），启动/重启/读状态前各同步一次。
 - 不填 `proxyUrl` 时的行为与从前逐字一致（环境变量 `HTTPS_PROXY` 等仍按老路径生效）。
 

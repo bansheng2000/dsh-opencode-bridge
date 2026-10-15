@@ -37,7 +37,14 @@ let hooks = []
 let hookIndex = 0
 let pendingRender = false
 
-const element = (type, props, ...children) => ({ type, props: props ?? {}, children })
+// Children live on the element AND on `props.children`, the way React has
+// them: the real primitives (SettingsForm) render `props.children`, so a
+// harness that kept them apart would silently render an empty form.
+const element = (type, props, ...children) => ({
+  type,
+  props: { ...(props ?? {}), children: children.length <= 1 ? children[0] : children },
+  children,
+})
 
 function scheduleRender() { pendingRender = true }
 
@@ -90,6 +97,55 @@ const registrations = []
 const localeRegistrations = []
 const effects = []
 
+/**
+ * Stand-in for the platform-seeded UI primitives.
+ *
+ * The form model is implemented for real (over a plain object) so the page
+ * renders the same tree the host would see, and an edit can be driven through
+ * it — the bundle is what wires the model, the specs and the actions together,
+ * and that wiring is what this file exists to check.
+ */
+const formValues = { proxyUrl: '', proxyRuntime: false }
+class FakeSettingsFormModel {
+  constructor(scope, specs) { this.scope = scope; this.specs = specs }
+  spec(field) { return this.specs.find(entry => entry.field === field) }
+  shell() { return { available: true, writable: true, dirty: false, invalid: false, saving: false, failed: false } }
+  field(field) {
+    const spec = this.spec(field)
+    return { text: spec.format(formValues[field]), overridden: false, invalid: false }
+  }
+  // The project thunk is stored, not called: the real store re-reads it on
+  // every get(), which is what makes an edit show up without a rebuild.
+  bind(project) { return { get: project, subscribe: () => () => {} } }
+  actions() {
+    return {
+      edit: (field, text) => {
+        const write = this.spec(field).parse(text)
+        if (write?.kind === 'set') formValues[field] = write.value
+      },
+      resetField: () => {},
+      save: () => {},
+      discard: () => {},
+    }
+  }
+  dispose() {}
+}
+
+const primitives = {
+  SettingsForm: props => element('div', { className: 'dsm-ocxb-form' }, ...(props.children ?? [])),
+  SettingsValueField: props => element('p', {}, `${props.label} = ${props.text}`, props.hint),
+  Switch: props => element('button', { role: 'switch', 'aria-checked': props.checked }, props.label),
+  SettingsFormModel: FakeSettingsFormModel,
+  settingsTextField: field => ({ field, format: value => (value === undefined || value === null ? '' : String(value)), parse: text => ({ kind: 'set', value: String(text) }) }),
+  settingsNumberField: field => ({ field }),
+}
+
+const configForms = {
+  get: namespace => (namespace === 'llm-opencode-bridge'
+    ? { subscribe: () => () => {}, getSnapshot: () => ({ status: 'ready', writable: true }) }
+    : undefined),
+}
+
 const ctx = {
   effect: (fn, label) => { effects.push(label); const d = fn(); return () => { if (typeof d === 'function') d() } },
   slots: {
@@ -105,7 +161,7 @@ const ctx = {
     },
     getSnapshot: () => ({ active: 'zh' }),
   },
-  get: () => undefined,
+  get: name => (name === 'configForms' ? configForms : undefined),
   logger: console,
 }
 
@@ -151,25 +207,45 @@ vm.runInContext(fs.readFileSync(path.join(root, 'lib', 'client.js'), 'utf8'), sa
 const mod = sandbox.__reg.factory(spec => {
   if (spec === 'react') return React
   if (spec === 'react/jsx-runtime') return { jsx: element, jsxs: element }
+  if (spec === '@deepseek-ai/dsh-client-ui-primitives') return primitives
   throw new Error(`unexpected require ${spec}`)
 })
 mod.apply(ctx)
 
 const options = registrations[0].options
 
+/**
+ * Render the registered page, through its wrapper if it has one.
+ *
+ * The page registers either directly or behind a subscription wrapper (the
+ * config-form variant), and the wrapper holds no state of its own — stepping
+ * through it is what reaches the component whose hooks persist between passes.
+ */
+const page = props => {
+  const node = render(registrations[0].component, props)
+  return typeof node?.type === 'function' ? render(node.type, { ...node.props }) : node
+}
+
 // --- Assertions ----------------------------------------------------------
 console.log('nav + title:')
 check('nav label is "OpenCode Bridge"', options.label() === 'OpenCode Bridge', JSON.stringify(options.label()))
 
 const injected = options.inject()
-let tree = render(registrations[0].component, injected)
+
+// The host materializes `inject()`'s `hooks` map into selector hooks. Do the
+// same here, so the page runs through the contract it is written against.
+for (const [key, store] of Object.entries(injected.hooks ?? {})) {
+  injected[`use${key[0].toUpperCase()}${key.slice(1)}`] = selector => selector(store.get())
+}
+
+let tree = page(injected)
 
 // The page loads its status through `fetch` in an effect, so the populated
 // render only exists after those promises settle. Drain the microtask queue and
 // re-render until the state stops changing.
 for (let i = 0; i < 20; i++) {
   await new Promise(resolve => setImmediate(resolve))
-  tree = render(registrations[0].component, injected)
+  tree = page(injected)
 }
 
 /** Collect every rendered string. */
@@ -181,7 +257,7 @@ function texts(node, out = []) {
     if (node.props?.dangerouslySetInnerHTML?.__html) out.push(node.props.dangerouslySetInnerHTML.__html)
     if (typeof node.type === 'function') {
       // Render child components with the same hook runtime.
-      const props = { ...node.props, children: undefined }
+      const props = { ...node.props }
       texts(render(node.type, props), out)
       return out
     }
@@ -203,6 +279,26 @@ check('shows the endpoint', joined.includes('http://127.0.0.1:51337/'))
 check('shows the data dir', joined.includes('opencode-bridge'))
 check('shows all four metric labels',
   ['已发现', '可用', '待检测', '不可用'].every(k => joined.includes(k)))
+
+console.log('\nproxy config form:')
+// The card is a function component, so the switch is reached by rendering
+// through the tree (walk) rather than by walking raw elements (findNode).
+const switchState = () => {
+  const found = []
+  walk(tree, node => { if (node.props?.role === 'switch') found.push(node) })
+  return found.length === 1 ? found[0].props['aria-checked'] : `${found.length} switches`
+}
+check('renders the proxy address field', joined.includes('代理地址'), joined.slice(0, 160))
+check('renders the proxy address hint', joined.includes('http://127.0.0.1:2080'))
+check('the switch reflects the stored value', switchState() === false, String(switchState()))
+
+// Drive a real edit through the model, the way the field's onEdit does.
+injected.edit('proxyUrl', 'http://127.0.0.1:2080')
+injected.edit('proxyRuntime', 'true')
+tree = page(injected)
+const edited = texts(tree).join('\n')
+check('an edited proxy url is rendered back', edited.includes('http://127.0.0.1:2080'), edited.slice(0, 160))
+check('the switch follows an edit', switchState() === true, String(switchState()))
 
 console.log('\nmodel rows:')
 check('lists Big Pickle', joined.includes('Big Pickle'))
@@ -248,7 +344,7 @@ function walk(node, visit) {
   if (Array.isArray(node)) { for (const c of node) walk(c, visit); return }
   if (typeof node !== 'object') return
   if (typeof node.type === 'function') {
-    const props = { ...node.props, children: undefined }
+    const props = { ...node.props }
     walk(render(node.type, props), visit)
     return
   }
@@ -265,7 +361,7 @@ check('every model has a clickable row', rowButtons.length === STATUS.models.len
 // Click the second row, then let the state settle and re-render.
 rowButtons[1].props.onClick()
 await new Promise(resolve => setImmediate(resolve))
-const openedTree = render(registrations[0].component, injected)
+const openedTree = page(injected)
 
 const openedRows = []
 walk(openedTree, node => { if (node.props?.className === 'dsm-ocxb-item') openedRows.push(node) })

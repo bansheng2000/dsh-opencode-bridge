@@ -78,9 +78,26 @@ const ctx = {
 }
 
 // --- Load the bundle the way the host does. ---
+/**
+ * Stand-in for the platform-seeded UI primitives.
+ *
+ * `ctx.get('configForms')` answers undefined here, so the page registers
+ * without the config form and none of these is ever called — they exist so the
+ * bundle's `require` resolves, which is exactly the contract under test.
+ */
+const primitives = {
+  SettingsForm: props => element('div', { className: 'dsm-ocxb-form' }, ...(props.children ?? [])),
+  SettingsValueField: () => null,
+  Switch: () => null,
+  SettingsFormModel: class {},
+  settingsTextField: field => ({ field }),
+  settingsNumberField: field => ({ field }),
+}
+
 const moduleTable = new Map([
   ['react', React],
   ['react/jsx-runtime', { jsx: element, jsxs: element }],
+  ['@deepseek-ai/dsh-client-ui-primitives', primitives],
 ])
 
 const sandbox = {

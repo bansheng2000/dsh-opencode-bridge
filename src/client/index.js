@@ -7,13 +7,15 @@
  * settings page rather than a standalone window.
  *
  * This file is authored as the body of the host's module-loader factory: it is
- * plain CJS, it may `require` only platform-seeded packages (`react`), and it
- * ends by assigning `module.exports`. `scripts/build-client.mjs` wraps it.
+ * plain CJS, it may `require` only platform-seeded packages (React and the
+ * client UI primitives), and it ends by assigning `module.exports`.
+ * `scripts/build-client.mjs` wraps it.
  *
  * @module dsh-opencode-bridge/client
  */
 
 const React = require('react')
+const primitives = require('@deepseek-ai/dsh-client-ui-primitives')
 const h = React.createElement
 
 /** Stable browser-plugin name. */
@@ -138,6 +140,20 @@ const zh = {
   'runtime.dataDir': '数据目录',
   'runtime.proxy': '出站代理',
   'runtime.proxyWhere': '填写位置：设置 → 插件 → 已安装 → dsh-opencode-bridge → 组件 llm-opencode-bridge → 配置',
+  'proxy.title': '出站代理',
+  'proxy.hint': '代理用于下载与连通性检测；OpenCode 运行时自己的请求默认直连——实测它经代理时会变慢甚至挂住。',
+  'proxy.url': '代理地址',
+  'proxy.urlHint': '如 http://127.0.0.1:2080，也可以只写 host:port；留空 = 直连',
+  'proxy.runtime': '运行时也走代理',
+  'proxy.runtimeHint': '仅在运行时确实没有直连出口时打开。',
+  'proxy.overridden': '已在配置文件中设置',
+  'proxy.reset': '恢复默认',
+  'proxy.invalid': '需要 http:// 或 https:// 地址',
+  'proxy.save': '保存',
+  'proxy.saving': '保存中…',
+  'form.unavailable': '当前宿主没有提供配置表单。',
+  'form.readOnly': '只读',
+  'form.saveFailed': '保存失败。',
   'feedback.refreshed': '已读取 {n} 个免费模型。',
   'feedback.probed': '检测完成：{ok} 个可用，{fail} 个不可用。',
   'feedback.restarted': '运行时已重启，共 {n} 个免费模型。',
@@ -210,6 +226,20 @@ const en = {
   'runtime.dataDir': 'Data dir',
   'runtime.proxy': 'Outbound proxy',
   'runtime.proxyWhere': 'Set it in Settings → Plugins → Installed → dsh-opencode-bridge → Components → Configure',
+  'proxy.title': 'Outbound proxy',
+  'proxy.hint': 'The proxy is used for downloads and reachability checks; the OpenCode runtime itself egresses directly by default — measured, it hangs or crawls through a proxy.',
+  'proxy.url': 'Proxy address',
+  'proxy.urlHint': 'e.g. http://127.0.0.1:2080, or just host:port; leave empty for a direct connection',
+  'proxy.runtime': 'Route the runtime through it too',
+  'proxy.runtimeHint': 'Only turn this on when the runtime genuinely has no direct route out.',
+  'proxy.overridden': 'Set in the config file',
+  'proxy.reset': 'Reset',
+  'proxy.invalid': 'Needs an http:// or https:// address',
+  'proxy.save': 'Save',
+  'proxy.saving': 'Saving…',
+  'form.unavailable': 'This host provides no config form.',
+  'form.readOnly': 'Read-only',
+  'form.saveFailed': 'Save failed.',
   'feedback.refreshed': 'Read {n} free model(s).',
   'feedback.probed': 'Testing done: {ok} available, {fail} unusable.',
   'feedback.restarted': 'Runtime restarted with {n} free model(s).',
@@ -286,6 +316,9 @@ const CSS = `
 .dsm-ocxb-card{border:1px solid var(--dsw-alias-border-l2,#36373b);background:var(--dsw-alias-bg-layer-2,#232529);border-radius:14px;flex-direction:column;gap:12px;padding:14px 16px;display:flex}
 .dsm-ocxb-cardtitle{color:var(--dsw-alias-label-primary,#e6e6e6);margin:0;font-size:14px;font-weight:600;line-height:1.4}
 .dsm-ocxb-cardhint{color:var(--dsw-alias-label-tertiary,#9aa0a8);margin:0;font-size:11px;line-height:1.5}
+.dsm-ocxb-proxy-row{align-items:center;gap:12px;flex-wrap:wrap;display:flex}
+.dsm-ocxb-proxy-copy{flex-direction:column;gap:2px;min-width:0;flex:1 1 200px;display:flex}
+.dsm-ocxb-proxy-label{color:var(--dsw-alias-label-primary,#e6e6e6);font-size:13px;line-height:1.5}
 .dsm-ocxb-btn{appearance:none;font:inherit;cursor:pointer;border:1px solid transparent;border-radius:8px;padding:5px 14px;font-size:13px;line-height:1.5}
 .dsm-ocxb-btn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary,#5686fe);outline-offset:1px}
 .dsm-ocxb-btn:disabled{opacity:.4;cursor:default}
@@ -524,9 +557,81 @@ function ModelDetail({ model, t, locale }) {
     }, line.text)))
 }
 
+/**
+ * A config field for a boolean value.
+ *
+ * The primitives ship `settingsTextField` and `settingsNumberField` only, so a
+ * switch is described here: `parse` returns undefined for anything that is not
+ * true/false, which is what marks the field invalid and blocks the save.
+ */
+function booleanField(field) {
+  return {
+    field,
+    format: value => (value === true ? 'true' : 'false'),
+    parse: text => {
+      const raw = String(text).trim()
+      if (raw === 'true') return { kind: 'set', value: true }
+      if (raw === 'false') return { kind: 'set', value: false }
+      return undefined
+    },
+  }
+}
+
+/**
+ * The outbound-proxy card.
+ *
+ * Purely presentational: the model, the subscribed snapshot and the actions all
+ * arrive as props (built once in `apply`), so this component owns no hooks and
+ * the page can be rendered without it when the host serves no config form.
+ */
+function ProxyForm(props) {
+  const { t, form, edit, resetField } = props
+  const disabled = form.writable !== true
+  return h('div', { className: 'dsm-ocxb-card' },
+    h('h3', { className: 'dsm-ocxb-cardtitle' }, t('proxy.title')),
+    h('p', { className: 'dsm-ocxb-cardhint' }, t('proxy.hint')),
+    h(primitives.SettingsForm, {
+      labels: {
+        unavailable: t('form.unavailable'),
+        readOnly: t('form.readOnly'),
+        saveFailed: t('form.saveFailed'),
+        save: t('proxy.save'),
+        saving: t('proxy.saving'),
+      },
+      state: form,
+      onSave: props.save,
+      onDiscard: props.discard,
+    },
+      h(primitives.SettingsValueField, {
+        id: 'dsh-ocxb-proxy-url',
+        label: t('proxy.url'),
+        hint: t('proxy.urlHint'),
+        overriddenLabel: t('proxy.overridden'),
+        resetLabel: t('proxy.reset'),
+        invalidLabel: t('proxy.invalid'),
+        disabled,
+        ...form.proxyUrl,
+        onEdit: text => edit('proxyUrl', text),
+        onReset: () => resetField('proxyUrl'),
+      }),
+      h('div', { className: 'dsm-ocxb-proxy-row' },
+        h('div', { className: 'dsm-ocxb-proxy-copy' },
+          h('span', { className: 'dsm-ocxb-proxy-label' }, t('proxy.runtime')),
+          h('span', { className: 'dsm-ocxb-cardhint' }, t('proxy.runtimeHint'))),
+        h(primitives.Switch, {
+          checked: form.proxyRuntime.text === 'true',
+          label: t('proxy.runtime'),
+          disabled,
+          onChange: next => edit('proxyRuntime', next ? 'true' : 'false'),
+        }))),
+  )
+}
+
 /** The whole settings page. */
 function BridgePage(props) {
   const { t, locale } = props
+  // Present only when the host serves a config form for this plugin's entry.
+  const proxyForm = props.form
   const [status, setStatus] = React.useState(null)
   const [feedback, setFeedback] = React.useState(null)
   const [busy, setBusy] = React.useState(null)
@@ -636,9 +741,20 @@ function BridgePage(props) {
         // The proxy fields live in the plugin's own config form, which is not
         // this page. Without the pointer, "direct" reads as "there is nowhere
         // to type one", which is exactly how it was reported.
-        status.proxy !== undefined && !status.proxy.configured && !status.proxy.enabled
+        // Pointless — and wrong — once the form itself is on this page.
+        status.proxy !== undefined && proxyForm === undefined
+          && !status.proxy.configured && !status.proxy.enabled
           && h('span', { className: 'dsm-ocxb-meta-muted' }, t('runtime.proxyWhere')),
         status.dataDir !== '' && h('span', {}, `${t('runtime.dataDir')}：${status.dataDir}`))),
+
+    proxyForm !== undefined && h(ProxyForm, {
+      t,
+      form: proxyForm,
+      edit: props.edit,
+      resetField: props.resetField,
+      save: props.save,
+      discard: props.discard,
+    }),
 
     feedback !== null && h('div', { className: `dsm-ocxb-feedback${feedback.error ? ' dsm-ocxb-feedback-error' : ''}` }, feedback.text),
 
@@ -652,6 +768,17 @@ function BridgePage(props) {
         : h(ModelList, { status, t, locale, selected, onSelect: setSelected })),
 
     h('p', { className: 'dsm-ocxb-footer' }, t('footer.note')))
+}
+
+/**
+ * The same page, subscribed to the config form.
+ *
+ * A separate component on purpose: the subscription hook must not be called
+ * conditionally, and the page renders with or without a form depending on
+ * whether the host has one to serve.
+ */
+function BridgePageWithConfig(props) {
+  return h(BridgePage, { ...props, form: props.useProxyForm(snapshot => snapshot) })
 }
 
 /** Attribute carrying the nav-row marker this module installs. */
@@ -759,19 +886,61 @@ function apply(ctx) {
 
     installStyles()
 
+    // This plugin's config form (the loader entry's schema) is served by the
+    // host, but nothing renders it for a third-party plugin — the plugin
+    // management page has no generic "render any entry's config" surface. A
+    // field nobody renders reads as a field that does not exist, so the page
+    // renders it here.
+    //
+    // `configForms` is deliberately absent from `inject`: on a host line that
+    // does not provide it, naming it would stop `apply` from ever running and
+    // the whole page would vanish. It is fetched instead, and the model is built
+    // once — rebuilding it per render would discard whatever was staged.
+    let proxyForm
+    const resolveProxyForm = () => {
+      if (proxyForm !== undefined) return proxyForm
+      try {
+        const scope = ctx.get?.('configForms')?.get(ENTRY_ID)
+        if (scope === undefined) return undefined
+        const model = new primitives.SettingsFormModel(scope, [
+          primitives.settingsTextField('proxyUrl'),
+          booleanField('proxyRuntime'),
+        ])
+        const store = model.bind(() => ({
+          ...model.shell(),
+          proxyUrl: model.field('proxyUrl'),
+          proxyRuntime: model.field('proxyRuntime'),
+        }))
+        ctx.effect(() => () => model.dispose?.(), 'dsh-opencode-bridge: proxy form')
+        proxyForm = { store, actions: model.actions() }
+      } catch (error) {
+        console.error('[dsh-opencode-bridge] proxy config form unavailable:', error)
+      }
+      return proxyForm
+    }
+
     // Two-phase registration: `inject` waits for the slot to be declared by the
-    // settings shell, which is what lets this page land in the left nav.
-    ctx.slots.inject('settings.section', () => ctx.slots.register({
-      name: 'settings.section',
-      id: SETTINGS_NS,
-      // After the built-in pages (General 0 / Models 10 / Plugins 15 / presets 20
-      // / market 40) so this sits with the other community pages.
-      order: 450,
-      // A thunk, not a resolved string: the shell re-reads it on every
-      // projection, so the nav row follows a locale change.
-      label: () => t('row.navLabel'),
-      inject: () => ({ t, locale: locale() }),
-    }, BridgePage))
+    // settings shell, which is what lets this page land in the left nav. Both
+    // the slot and the config-form service come from that shell, so by the time
+    // this callback runs the form is normally there — and the component is
+    // chosen here, once, because a subscription hook may not appear or vanish
+    // between renders of a mounted component.
+    ctx.slots.inject('settings.section', () => {
+      const form = resolveProxyForm()
+      return ctx.slots.register({
+        name: 'settings.section',
+        id: SETTINGS_NS,
+        // After the built-in pages (General 0 / Models 10 / Plugins 15 / presets 20
+        // / market 40) so this sits with the other community pages.
+        order: 450,
+        // A thunk, not a resolved string: the shell re-reads it on every
+        // projection, so the nav row follows a locale change.
+        label: () => t('row.navLabel'),
+        inject: () => form === undefined
+          ? { t, locale: locale() }
+          : { t, locale: locale(), hooks: { proxyForm: form.store }, ...form.actions },
+      }, form === undefined ? BridgePage : BridgePageWithConfig)
+    })
 
     installNavIcon(ctx, () => t('row.navLabel'))
   } catch (error) {
