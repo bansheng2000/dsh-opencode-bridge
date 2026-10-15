@@ -137,6 +137,7 @@ const zh = {
   'runtime.endpoint': '本地端点',
   'runtime.dataDir': '数据目录',
   'runtime.proxy': '出站代理',
+  'runtime.proxyWhere': '填写位置：设置 → 插件 → 已安装 → dsh-opencode-bridge → 组件 llm-opencode-bridge → 配置',
   'feedback.refreshed': '已读取 {n} 个免费模型。',
   'feedback.probed': '检测完成：{ok} 个可用，{fail} 个不可用。',
   'feedback.restarted': '运行时已重启，共 {n} 个免费模型。',
@@ -208,6 +209,7 @@ const en = {
   'runtime.endpoint': 'Endpoint',
   'runtime.dataDir': 'Data dir',
   'runtime.proxy': 'Outbound proxy',
+  'runtime.proxyWhere': 'Set it in Settings → Plugins → Installed → dsh-opencode-bridge → Components → Configure',
   'feedback.refreshed': 'Read {n} free model(s).',
   'feedback.probed': 'Testing done: {ok} available, {fail} unusable.',
   'feedback.restarted': 'Runtime restarted with {n} free model(s).',
@@ -631,6 +633,11 @@ function BridgePage(props) {
         status.proxy !== undefined && h('span', {
           className: status.proxy.configured ? undefined : 'dsm-ocxb-meta-muted',
         }, `${t('runtime.proxy')}：${status.proxy.summary}`),
+        // The proxy fields live in the plugin's own config form, which is not
+        // this page. Without the pointer, "direct" reads as "there is nowhere
+        // to type one", which is exactly how it was reported.
+        status.proxy !== undefined && !status.proxy.configured && !status.proxy.enabled
+          && h('span', { className: 'dsm-ocxb-meta-muted' }, t('runtime.proxyWhere')),
         status.dataDir !== '' && h('span', {}, `${t('runtime.dataDir')}：${status.dataDir}`))),
 
     feedback !== null && h('div', { className: `dsm-ocxb-feedback${feedback.error ? ' dsm-ocxb-feedback-error' : ''}` }, feedback.text),

@@ -176,26 +176,34 @@ set OPENCODE_BRIDGE_RUNTIME_URL=https://your-mirror/opencode-windows-x64-1.18.33
 
 ## 配置
 
-配置写在 profile 的 `settings.yaml` 里，命名空间 `opencode-bridge`：
+**填代理的地方**（两个代理字段是插件配置里仅有的可编辑项）：
+
+> 设置 → 插件 → 已安装 → `dsh-opencode-bridge` → 组件 `llm-opencode-bridge` → 「配置 llm-opencode-bridge」
+
+表单里的「出站代理」和「是否转发给运行时」保存后**不用重启**：下载与运行时在下次启动时读取，状态行即时更新。（插件卡片上的状态行也会直接写出这个路径。）
+
+其余字段目前只能在 profile 的 loader 配置里写，即在 profile 的 `cordis.yml` 里该条目下加 `config:`（条目 id 是 `llm-opencode-bridge`）：
 
 ```yaml
-opencode-bridge:
-  dataDir: D:\DSH-data\opencode-bridge   # 运行时/日志存放位置
-  binaryPath: C:\path\to\opencode.exe     # 用已有的 OpenCode，不下载
-  runtimeVersion: 1.18.33                 # 固定版本
-  autoRefresh: true                       # 启动后重新读一次模型清单
-  proxyUrl: http://127.0.0.1:2080         # 出站 HTTP 代理（下载/状态请求走它）
-  proxyRuntime: false                      # 是否把代理也交给受管 OpenCode 运行时
+- id: llm-opencode-bridge
+  name: dsh-opencode-bridge
+  config:
+    dataDir: D:\DSH-data\opencode-bridge   # 运行时/日志存放位置
+    binaryPath: C:\path\to\opencode.exe     # 用已有的 OpenCode，不下载
+    runtimeVersion: 1.18.33                 # 固定版本
+    autoRefresh: true                       # 启动后重新读一次模型清单
 ```
 
-| 字段 | 说明 | 默认 |
-| --- | --- | --- |
-| `dataDir` | 受管运行时、日志、状态目录 | `<DSH home>/opencode-bridge` |
-| `binaryPath` | 使用已有的 OpenCode 二进制 | 自动下载官方版本 |
-| `runtimeVersion` | 固定 OpenCode 版本 | 最新版 |
-| `autoRefresh` | 启动 15 秒后重读一次免费模型清单 | `true` |
-| `proxyUrl` | 下载运行时、状态请求走这个 HTTP 代理；留空则沿用环境变量代理 | 不使用代理 |
-| `proxyRuntime` | 把代理也传给受管 OpenCode 运行时 | `false` |
+> 这两个代理字段必须保持 `volatile()`（见 `lib/index.js` 的 `Config`）：Harness 只为声明了 volatile 字段的条目渲染配置表单，去掉它表单就整块消失，而不是变灰。
+
+| 字段 | 说明 | 默认 | 界面上可改 |
+| --- | --- | --- | --- |
+| `dataDir` | 受管运行时、日志、状态目录 | `<DSH home>/opencode-bridge` | 否 |
+| `binaryPath` | 使用已有的 OpenCode 二进制 | 自动下载官方版本 | 否 |
+| `runtimeVersion` | 固定 OpenCode 版本 | 最新版 | 否 |
+| `autoRefresh` | 启动 15 秒后重读一次免费模型清单 | `true` | 否 |
+| `proxyUrl` | 下载运行时、状态请求走这个 HTTP 代理；留空则沿用环境变量代理 | 不使用代理 | **是** |
+| `proxyRuntime` | 把代理也传给受管 OpenCode 运行时 | `false` | **是** |
 
 也可用环境变量 `OPENCODE_BRIDGE_DATA_DIR` 指定数据目录。
 
@@ -204,7 +212,8 @@ opencode-bridge:
 - 填了 `proxyUrl` 就用它（`http://host:port`，也接受裸 `host:port`）。`NO_PROXY` 仍然优先于它，`127.0.0.1 / localhost / ::1` 永远直连。
 - `proxyRuntime` **默认关，而且建议保持关**：实测把代理转发给受管运行时后，一次普通 completion 90 秒不返回（上游报 `SessionPrompt.createUserMessage` 500 UnknownError），完全不转发时同一调用 3.8 秒完成。只有运行时确实没有直连出口时才打开。
 - 只支持 HTTP 代理，不支持 SOCKS5：`proxyRuntime` 打开时配置值只写入 `HTTP_PROXY` / `HTTPS_PROXY`，**故意不写 `ALL_PROXY`**（那个变量带 SOCKS 语义）。
-- 设置页的状态行「出站代理」显示当前生效的代理描述；**从不显示凭据**，未配置时显示「直连（默认）」。
+- 状态行「出站代理」显示当前生效的代理描述；**从不显示凭据**，未配置时显示「直连（默认）」，并在旁边写出填写位置。
+- 改完即生效，不用重启：两个字段是 `volatile` 的，`apply()` 通过闭包每次读它们的当前值（`lib/runtime.js` 的 `configureProxy` 负责解包），启动/重启/读状态前各同步一次。
 - 不填 `proxyUrl` 时的行为与从前逐字一致（环境变量 `HTTPS_PROXY` 等仍按老路径生效）。
 
 ## 架构

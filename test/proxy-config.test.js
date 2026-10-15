@@ -11,6 +11,8 @@
 
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import z from '@deepseek-ai/schemastery'
 import {
   configureProxy, describeProxy, proxyFor, runtimeProxyEnabled, runtimeProxyEnv,
 } from '../lib/runtime.js'
@@ -116,4 +118,49 @@ test('credentials stay out of the status line', () => {
     assert.equal(described.host, '127.0.0.1:2080')
     assert.ok(!described.summary.includes('secret'), '凭据不应出现在状态页面上')
   }))
+})
+/**
+ * The settings form hands the plugin volatile wrappers, not values.
+ *
+ * Volatile is load-bearing twice over: the Harness only renders a settings form
+ * for a loader entry whose schema declares volatile fields, and each such field
+ * resolves to a frozen `{ get }` wrapper that the loader rewrites in place when
+ * the form is saved. If the unwrapping regressed, the form would either not
+ * appear at all, or `new URL()` would be handed a wrapper and the route would
+ * silently stay direct while the page claimed otherwise.
+ */
+test('a volatile config field is read through its wrapper', () => {
+  const schema = z.object({
+    proxyUrl: z.string().volatile(),
+    proxyRuntime: z.boolean().default(false).volatile(),
+  })
+  const config = schema({ proxyUrl: 'http://127.0.0.1:2080', proxyRuntime: true })
+  assert.equal(typeof config.proxyUrl.get, 'function', '前提：volatile 字段是包装对象而不是值')
+  withConfig({ url: config.proxyUrl, runtime: config.proxyRuntime }, () => withEnv({}, () => {
+    assert.equal(proxyFor('https://registry.npmjs.org/').hostname, '127.0.0.1')
+    assert.equal(runtimeProxyEnabled(), true)
+  }))
+})
+
+test('a wrapper re-read after an edit reflects the new value', () => {
+  const schema = z.object({
+    proxyUrl: z.string().volatile(),
+    proxyRuntime: z.boolean().default(false).volatile(),
+  })
+  const before = schema({ proxyUrl: 'http://127.0.0.1:2080' })
+  withConfig({ url: before.proxyUrl, runtime: before.proxyRuntime }, () => withEnv({}, () => {
+    assert.match(describeProxy().summary, /下载经代理 http:\/\/127\.0\.0\.1:2080/)
+    // What saving the form looks like from here: same shape, new wrapper.
+    // `apply` reaches the field through a closure rather than a snapshot, which
+    // is the only reason this is not stale by construction.
+    const after = schema({ proxyUrl: 'http://127.0.0.1:7897' })
+    configureProxy({ url: after.proxyUrl, runtime: after.proxyRuntime })
+    assert.equal(proxyFor('https://github.com/').port, '7897')
+  }))
+})
+
+test('both proxy fields are declared volatile, or the form never renders', () => {
+  const source = readFileSync(new URL('../lib/index.js', import.meta.url), 'utf8')
+  assert.match(source, /proxyUrl: z\.string\(\)\.volatile\(\)/)
+  assert.match(source, /proxyRuntime: z\.boolean\(\)\.default\(false\)\.volatile\(\)/)
 })

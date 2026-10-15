@@ -16,6 +16,9 @@
 - 配置项 `proxyRuntime`：是否把代理也转发给受管 OpenCode 运行时（默认关，原因见 README「出站代理」）。
 - 设置页状态行「出站代理」（原「运行时代理」）：显示生效中的代理，不含凭据；未配置时显示「直连（默认）」。
 - 从 `lib/runtime.js` 导出 `configureProxy()` / `describeProxy()` / `proxyFor()` / `tunnelledSocket()`，供测试与复用。
+- **代理字段现在能在设置界面里填**：`Config` 的 `proxyUrl` / `proxyRuntime` 改为 `volatile()`。此前 schema 里一个 volatile 字段都没有，Harness 因此完全不渲染配置表单（`dsh-settings` 的 `volatileForm()` 无命中即返回 `[]`），表现就是「找不到填代理的地方」——不是没重启，是界面压根没有这两项。入口：设置 → 插件 → 已安装 → `dsh-opencode-bridge` → 组件 `llm-opencode-bridge` → 「配置 llm-opencode-bridge」。
+- 代理改动**保存即生效，不用重启**：`configureProxy()` 会在启动、重启与读取状态前重新读取字段当前值，`volatile` 包装由 `lib/runtime.js` 的 `fieldValue()` 解开。
+- 设置页状态行在未配置代理时补上填写位置提示（中英双语）。
 
 ### 修复
 
@@ -24,7 +27,7 @@
 ### 说明
 
 - 零行为变化：不填 `proxyUrl`、不设 `OPENCODE_BRIDGE_RUNTIME_PROXY=1` 时，代理变量依旧不进受管运行时，与 0.1.0 一致。
-- 版本号仍是 `0.1.0`：profile 里声明的是 `^0.1.0`，对 0.x 只覆盖 `>=0.1.0 <0.2.0`，改版本号必须同步改 profile。
+- 0.2.0 未发布到 npm：本机 profile 里用的是 `file:E:/文档/deepseek-harness/dsh-opencode-bridge`，不是 registry。
 
 ## 0.1.0
 
