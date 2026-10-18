@@ -1,5 +1,17 @@
 # Changelog
 
+## 未发布
+
+### 修复
+
+- **回答在生成过程中就开始返回**（新增 `lib/stream.js`；改 `lib/backend.js`、`lib/shim.js`、`lib/protocol.js`）：原先 `lib/shim.js` 只在事件流报出「有内容」时写一帧 assistant role，正文一律压到 `await complete(...)` 返回后才由 `sendSSE()` 一次性下发 —— 客户端的首 token 延迟因此等于整轮生成时间（本机实测每步 13–118 秒；同一模型族下插件免费模型约 49.6 s/步、直连付费 29.1 s/步，插件多出来的正是这段缓冲）。现在把运行时的 `message.part.*` 事件转成 OpenAI SSE 增量：`lib/backend.js` 的 `handleEvent()` 用新的 `createStreamState()` 跟踪每个 part，把新出现的可见文本放进 `progress.delta`；`lib/shim.js` 收到 delta 就写一帧 `delta.content`；`lib/protocol.js` 的 `sendSSE()` 新增 `streamed` 参数，收尾时只补发剩余部分，**绝不重发已经发过的前缀**。
+- 两种答案形状分开处理：仅对话模型（`chatOnly`）的文本本身就是答案；带工具的模型回复的是适配器 JSON 信封，只有其中的 `content` 字符串是给用户看的 —— 新增的 `envelopeContent()` 容忍分片到达的转义（`\uXXXX` 读满 4 位才解码、尾随未完成的转义先压住），**JSON 语法永远不会出现在用户眼前**；工具调用仍等信封校验通过后才下发（提前发出去可能给客户端一个随后被拒绝的动作）。收尾时若正文不以前缀开头（格式纠正导致重写），则整段重发并在日志里说明原因：客户端已经显示的字符撤不回来。
+- part 的文本按「累计报告 + 该报告之后的增量」保存，报告覆盖增量而不是与之相加 —— 用后缀比较去重会吃掉 JSON `\\` 转义里两个一模一样的反斜杠（写测试时真的踩到了）。
+
+### 测试
+
+- 新增 `test/stream.test.js`（11 例：分片大小 1/2/3/7/64 下的信封解码、跨分片的 `\u` 转义、重试不重复前缀、`sendSSE` 的补发与整体重发语义）与 `test/stream-events.test.js`（4 例：事件流 → delta 的接线、信封模型不吐 JSON、推理文本不当答案、别的会话或无会话的事件不串台）。
+
 ## 0.2.1
 
 ### 兼容性
