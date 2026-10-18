@@ -10,7 +10,7 @@
 
 ### 测试
 
-- 新增 `test/stream.test.js`（11 例：分片大小 1/2/3/7/64 下的信封解码、跨分片的 `\u` 转义、重试不重复前缀、`sendSSE` 的补发与整体重发语义）与 `test/stream-events.test.js`（4 例：事件流 → delta 的接线、信封模型不吐 JSON、推理文本不当答案、别的会话或无会话的事件不串台）。
+- 新增 `test/stream.test.js`（11 例：分片大小 1/2/3/7/64 下的信封解码、跨分片的 `\u` 转义、重试不重复前缀、`sendSSE` 的补发与整体重发语义）与 `test/stream-events.test.js`（4 例：事件流 → delta 的接线、信封模型不吐 JSON、推理文本不当答案、别的会话或无会话的事件不串台）与 `test/stream-shim.test.js`（3 例：在真实 socket 上验证增量投递、答案被重写后整段重发、非流式请求仍是单个 JSON）。
 
 ## 0.2.1
 
