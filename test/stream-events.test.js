@@ -59,3 +59,39 @@ test('an event for another session, or none, is ignored', () => {
   emit('message.part.delta', { partID: 'p1', field: 'text', delta: 'y' })
   assert.deepEqual(deltas, [])
 })
+
+test('the prompt this adapter sent is never delivered as answer text', () => {
+  // The runtime stores the request as a text part of the *user* message, and
+  // that text is the JSON conversation whose first `content` is the external
+  // system prompt. Decoding it handed the whole system prompt to the client
+  // 0.5 s into the request (2026-10-18), so this part must produce nothing.
+  const { deltas, emit } = harness({ envelope: true })
+  const payload = JSON.stringify([
+    { role: 'system', content: 'SECRET SYSTEM PROMPT' },
+    { role: 'user', content: 'hi' },
+  ])
+  emit('message.updated', { sessionID: 'ses_1', info: { id: 'msg_user', sessionID: 'ses_1', role: 'user' } })
+  emit('message.part.updated', {
+    sessionID: 'ses_1',
+    part: { id: 'p_user', messageID: 'msg_user', type: 'text', text: payload },
+  })
+  emit('message.part.delta', { sessionID: 'ses_1', partID: 'p_user', messageID: 'msg_user', field: 'text', delta: payload })
+  assert.deepEqual(deltas, [])
+})
+
+test('the same payload is refused even without its message announcement', () => {
+  // The event feed is subscribed in the background, so an early
+  // `message.updated` can be missed; the refusal cannot depend on that order.
+  const { deltas, emit } = harness({ envelope: true })
+  const payload = JSON.stringify([{ role: 'system', content: 'SECRET SYSTEM PROMPT' }])
+  emit('message.part.updated', { sessionID: 'ses_1', part: { id: 'p_user', type: 'text', text: payload } })
+  assert.deepEqual(deltas, [])
+})
+
+test('the answer still streams when the assistant announcement was missed', () => {
+  const { deltas, emit } = harness({ envelope: true })
+  emit('message.updated', { sessionID: 'ses_1', info: { id: 'm1', role: 'user' } })
+  emit('message.part.delta', { sessionID: 'ses_1', partID: 'p_other', messageID: 'm1', field: 'text', delta: '{"content":"no"}' })
+  emit('message.part.updated', { sessionID: 'ses_1', part: { id: 'p2', type: 'text', text: '{"content":"the answer"' } })
+  assert.equal(deltas.join(''), 'the answer')
+})
