@@ -50,6 +50,7 @@ const STATUS_PATH = '/plugins/dsh-opencode-bridge/status'
 const REFRESH_PATH = '/plugins/dsh-opencode-bridge/models/refresh'
 const PROBE_PATH = '/plugins/dsh-opencode-bridge/models/probe'
 const RESTART_PATH = '/plugins/dsh-opencode-bridge/runtime/restart'
+const PURGE_PATH = '/plugins/dsh-opencode-bridge/runtime/uninstall'
 
 /** How often the card re-reads the status document while it is open. */
 const POLL_INTERVAL_MS = 5000
@@ -164,7 +165,18 @@ const zh = {
   'form.saveFailed': '保存失败。',
   'feedback.refreshed': '已读取 {n} 个免费模型。',
   'feedback.probed': '检测完成：{ok} 个可用，{fail} 个不可用。',
+  'feedback.probeStarted': '已开始检测 {n} 个模型，进度见上方状态。',
+  'feedback.probeBusy': '检测正在进行，请稍候。',
   'feedback.restarted': '运行时已重启，共 {n} 个免费模型。',
+  'action.clear': '清除本机数据',
+  'action.clearing': '读取中…',
+  'action.clearConfirm': '确认删除',
+  'action.cancel': '取消',
+  'clear.title': '本机数据',
+  'clear.hint': '删除运行时、状态、日志与抓包记录。卸载插件本身在「设置 → 插件 → 卸载」里做。',
+  'feedback.clearAsk': '将删除约 {size} 的本机数据，确认后不可恢复。',
+  'feedback.cleared': '已清除本机运行时数据（{size}）。',
+  'feedback.nothingToClear': '没有可清除的本机数据。',
   'error.prefix': '操作失败：',
 }
 
@@ -250,7 +262,18 @@ const en = {
   'form.saveFailed': 'Save failed.',
   'feedback.refreshed': 'Read {n} free model(s).',
   'feedback.probed': 'Testing done: {ok} available, {fail} unusable.',
+  'feedback.probeStarted': 'Testing {n} model(s) now; progress shows above.',
+  'feedback.probeBusy': 'A test is already running.',
   'feedback.restarted': 'Runtime restarted with {n} free model(s).',
+  'action.clear': 'Clear local data',
+  'action.clearing': 'Reading…',
+  'action.clearConfirm': 'Delete',
+  'action.cancel': 'Cancel',
+  'clear.title': 'Local data',
+  'clear.hint': 'Removes the runtime, state, logs and captures. Uninstalling the plugin itself happens in Settings → Plugins → Uninstall.',
+  'feedback.clearAsk': 'About {size} of local data will be removed. This cannot be undone.',
+  'feedback.cleared': 'Cleared {size} of local runtime data.',
+  'feedback.nothingToClear': 'Nothing to clear.',
   'error.prefix': 'Failed: ',
 }
 
@@ -334,6 +357,8 @@ const CSS = `
 .dsm-ocxb-btn-outline:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:rgba(255,255,255,.04)}
 .dsm-ocxb-btn-primary{background:var(--dsw-alias-label-primary,#e6e6e6);color:var(--dsw-alias-bg-layer-3,#202126)}
 .dsm-ocxb-btn-primary:hover:not(:disabled){opacity:.9}
+.dsm-ocxb-btn-danger{border-color:#7c3a3a;color:#f08a8a;background:transparent;font-weight:500}
+.dsm-ocxb-btn-danger:hover:not(:disabled){color:#ffb4b4;border-color:#a04b4b;background:rgba(232,90,90,.12)}
 .dsm-ocxb-status{align-items:center;gap:10px;flex-wrap:wrap;display:flex;font-size:13px;color:var(--dsw-alias-label-secondary,#c6c9d0)}
 .dsm-ocxb-dot{width:8px;height:8px;flex:none;border-radius:50%;background:#28c8b4}
 .dsm-ocxb-dot-error{background:#e85a5a}
@@ -391,6 +416,14 @@ function installStyles() {
 }
 
 /** Substitute `{name}` placeholders. */
+/** Byte counts as the page shows them: MB below a gigabyte, GB above. */
+function sizeText(bytes) {
+  const value = Number(bytes) || 0
+  if (value >= 1073741824) return `${(value / 1073741824).toFixed(2)} GB`
+  if (value >= 1048576) return `${(value / 1048576).toFixed(1)} MB`
+  return `${Math.round(value / 1024)} KB`
+}
+
 function fill(template, params) {
   if (params === undefined) return template
   return template.replace(/\{(\w+)\}/g, (match, key) => (key in params ? String(params[key]) : match))
@@ -644,6 +677,8 @@ function BridgePage(props) {
   const [feedback, setFeedback] = React.useState(null)
   const [busy, setBusy] = React.useState(null)
   const [selected, setSelected] = React.useState(null)
+  // Set once the size of the local data is known: the delete needs a second click.
+  const [confirmClear, setConfirmClear] = React.useState(null)
 
   // Poll the host for the live status document. The page is the only reader, so
   // the interval is owned here and torn down with the component.
@@ -679,11 +714,47 @@ function BridgePage(props) {
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`)
       if (key === 'refresh') setFeedback({ text: fill(t('feedback.refreshed'), { n: result.count ?? 0 }) })
-      else if (key === 'probe') setFeedback({ text: fill(t('feedback.probed'), { ok: result.ok ?? 0, fail: result.failed ?? 0 }) })
+      else if (key === 'probe') setFeedback({ text: result.started === false ? t('feedback.probeBusy') : fill(t('feedback.probeStarted'), { n: result.count ?? 0 }) })
       else if (key === 'restart') setFeedback({ text: fill(t('feedback.restarted'), { n: result.count ?? 0 }) })
+      else if (key === 'clear') setFeedback({ text: fill(t('feedback.cleared'), { size: sizeText(result.bytes) }) })
       // Re-read immediately so the panel reflects the action without waiting a tick.
       const fresh = await fetch(STATUS_PATH).then(r => (r.ok ? r.json() : null)).catch(() => null)
       if (fresh) setStatus(fresh)
+    } catch (error) {
+      setFeedback({ text: `${t('error.prefix')}${String(error?.message ?? error)}`, error: true })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /**
+   * Ask before deleting: the first click only reads the size.
+   *
+   * Deleting the runtime is not undoable in place — it is a fresh ~60 MB
+   * download plus whatever state the runtime kept — so it takes a sizing round
+   * trip and an explicit confirmation instead of one click. A data directory the
+   * host does not recognize as this plugin's is refused, and that reaches the
+   * page as the error text.
+   */
+  const askClear = async () => {
+    if (busy !== null) return
+    setBusy('clear')
+    setFeedback(null)
+    try {
+      const response = await fetch(PURGE_PATH, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: true }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error ?? `HTTP ${response.status}`)
+      if ((result.bytes ?? 0) === 0) {
+        setConfirmClear(null)
+        setFeedback({ text: t('feedback.nothingToClear') })
+      } else {
+        setConfirmClear({ bytes: result.bytes })
+        setFeedback({ text: fill(t('feedback.clearAsk'), { size: sizeText(result.bytes) }) })
+      }
     } catch (error) {
       setFeedback({ text: `${t('error.prefix')}${String(error?.message ?? error)}`, error: true })
     } finally {
@@ -774,6 +845,37 @@ function BridgePage(props) {
       status === null
         ? h('p', { className: 'dsm-ocxb-empty' }, t('models.empty'))
         : h(ModelList, { status, t, locale, selected, onSelect: setSelected })),
+
+    // What the plugin left on disk. Uninstalling the plugin themselves is the
+    // Harness's job (设置 → 插件 → 卸载); this is the other half — the runtime and
+    // state nothing else removes.
+    h('div', { className: 'dsm-ocxb-card' },
+      h('div', { className: 'dsm-ocxb-status' },
+        h('div', { className: 'dsm-ocxb-proxy-copy' },
+          h('span', { className: 'dsm-ocxb-proxy-label' }, t('clear.title')),
+          h('span', { className: 'dsm-ocxb-cardhint' }, t('clear.hint'))),
+        confirmClear === null
+          ? h('button', {
+            type: 'button',
+            className: 'dsm-ocxb-btn dsm-ocxb-btn-outline',
+            disabled: busy !== null || phase === 'starting',
+            onClick: () => void askClear(),
+          }, busy === 'clear'
+            ? h('span', {}, h('span', { className: 'dsm-ocxb-spinner' }), ` ${t('action.clearing')}`)
+            : t('action.clear'))
+          : h('span', { className: 'dsm-ocxb-actions' },
+            h('button', {
+              type: 'button',
+              className: 'dsm-ocxb-btn dsm-ocxb-btn-danger',
+              disabled: busy !== null,
+              onClick: () => { setConfirmClear(null); void act('clear', PURGE_PATH, { dryRun: false }) },
+            }, t('action.clearConfirm')),
+            h('button', {
+              type: 'button',
+              className: 'dsm-ocxb-btn dsm-ocxb-btn-outline',
+              disabled: busy !== null,
+              onClick: () => { setConfirmClear(null); setFeedback(null) },
+            }, t('action.cancel'))))),
 
     h('p', { className: 'dsm-ocxb-footer' }, t('footer.note')))
 }

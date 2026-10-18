@@ -7,6 +7,7 @@
  */
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { findRuntime, startBackend } from '../lib/runtime.js'
 import { BridgeCatalog, classifyFailure } from '../lib/catalog.js'
@@ -14,15 +15,17 @@ import { prepare } from '../lib/protocol.js'
 import { probeBody, probeModel, formatUnsupported, PROBE_ATTEMPT_TIMEOUT_MS } from '../lib/probe.js'
 
 // Reuse the live install's runtime binary so this does not re-download.
-const LIVE = 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
-const dataDir = 'D:\\DSH\\_diag-ocxb'
+const home = process.env.DSH_HOME ?? path.join(process.env.USERPROFILE ?? '', '.dsh')
+const LIVE = process.env.OPENCODE_BRIDGE_LIVE_DIR ?? path.join(home, 'opencode-bridge')
+const dataDir = process.env.OPENCODE_BRIDGE_DIAG_DIR ?? path.join(os.tmpdir(), '_ocb-diag')
 fs.rmSync(dataDir, { recursive: true, force: true })
 fs.mkdirSync(path.join(dataDir, 'runtime'), { recursive: true })
 
-const seeded = path.join(LIVE, 'runtime', '1.18.33')
-if (fs.existsSync(seeded)) {
-  fs.cpSync(seeded, path.join(dataDir, 'runtime', '1.18.33'), { recursive: true })
-  console.log('reused the seeded runtime binary')
+const seeded = path.join(LIVE, 'runtime')
+for (const entry of fs.existsSync(seeded) ? fs.readdirSync(seeded) : []) {
+  if (!fs.statSync(path.join(seeded, entry)).isDirectory()) continue
+  fs.cpSync(path.join(seeded, entry), path.join(dataDir, 'runtime', entry), { recursive: true })
+  console.log(`reused the seeded runtime ${entry}`)
 }
 
 const logStream = fs.createWriteStream(path.join(dataDir, 'diag.log'), { flags: 'a' })

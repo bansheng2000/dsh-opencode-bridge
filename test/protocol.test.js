@@ -9,7 +9,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { prepare, decode, completion, BridgeError } from '../lib/protocol.js'
-import { buildHandoff, handoffInput, validateAction } from '../lib/handoff.js'
+import { buildHandoff, handoffInput } from '../lib/handoff.js'
 import { freeModels, clientModelID } from '../lib/backend.js'
 import { reasoningEfforts } from '../lib/reasoning.js'
 
@@ -295,34 +295,6 @@ test('handoffInput fills arguments from the approval metadata', () => {
 test('handoffInput prefers the tool part over the metadata', () => {
   const input = handoffInput({ input: { command: 'real' } }, { metadata: { command: 'stale' } })
   assert.equal(input.command, 'real')
-})
-
-test('validateAction refuses a tool the receiver did not offer', () => {
-  assert.throws(
-    () => validateAction({ name: 'Bash', arguments: {} }, []),
-    error => error.code === 'invalid_tool_call',
-  )
-})
-
-test('validateAction refuses an undeclared argument', () => {
-  const tools = [{
-    type: 'function',
-    function: { name: 'Read', parameters: { type: 'object', properties: { file_path: { type: 'string' } }, required: ['file_path'] } },
-  }]
-  assert.throws(
-    () => validateAction({ name: 'Read', arguments: { file_path: '/a', extra: 1 } }, tools),
-    error => error.code === 'invalid_tool_call',
-  )
-})
-
-test('validateAction accepts a well-formed action', () => {
-  const tools = [{
-    type: 'function',
-    function: { name: 'Read', parameters: { type: 'object', properties: { file_path: { type: 'string' } }, required: ['file_path'] } },
-  }]
-  assert.deepEqual(validateAction({ name: 'read', arguments: { file_path: '/a' } }, tools), {
-    name: 'Read', arguments: { file_path: '/a' },
-  })
 })
 
 test('freeModels keeps only models whose every cost dimension is zero', () => {

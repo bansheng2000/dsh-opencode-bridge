@@ -11,9 +11,21 @@
 
 import path from 'node:path'
 import fs from 'node:fs'
-import { loadProfile, readProfileManifest } from 'file:///D:/DSH/DSH%20Desktop/resources/app/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js'
+import { pathToFileURL } from 'node:url'
 
-const installAnchor = 'D:\\DSH\\DSH Desktop\\resources\\app\\package.json'
+// The app's own loader, from the environment: only a machine with a Harness
+// install has one, and the path differs per machine. Without it this check
+// reports a skip rather than failing on a path from another computer.
+const APP = process.env.DSH_APP_MODULES
+if (APP === undefined || !fs.existsSync(path.join(APP, '@deepseek-ai', 'dsh-app-boot'))) {
+  console.log('skipped: set DSH_APP_MODULES to <app>/node_modules to load a profile with the app loader')
+  process.exit(0)
+}
+
+const installAnchor = path.join(path.dirname(APP), 'package.json')
+const { loadProfile, readProfileManifest } = await import(
+  pathToFileURL(path.join(APP, '@deepseek-ai', 'dsh-app-boot', 'lib', 'index.js')).href,
+)
 
 /**
  * Candidate Harness homes, most-likely first.
@@ -25,7 +37,6 @@ const installAnchor = 'D:\\DSH\\DSH Desktop\\resources\\app\\package.json'
 const CANDIDATES = [
   process.argv[3],
   process.env.DSH_HOME,
-  'D:\\deep seek harness\\dsh-home',
   path.join(process.env.USERPROFILE ?? '', '.dsh'),
 ].filter(Boolean)
 

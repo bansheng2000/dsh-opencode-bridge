@@ -20,7 +20,10 @@ import { prepare } from '../lib/protocol.js'
 
 const args = process.argv.slice(2)
 const noProxy = args.includes('--no-proxy')
-const dataDir = args.find(a => !a.startsWith('--')) ?? 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
+const home = process.env.DSH_HOME ?? path.join(process.env.USERPROFILE ?? '', '.dsh')
+const dataDir = args.find(a => !a.startsWith('--'))
+  ?? process.env.OPENCODE_BRIDGE_LIVE_DIR
+  ?? path.join(home, 'opencode-bridge')
 
 if (noProxy) {
   // Strip every proxy variable so the "direct" path is genuinely exercised.

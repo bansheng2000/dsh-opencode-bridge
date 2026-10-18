@@ -14,7 +14,10 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const APP = 'D:/DSH/DSH Desktop/resources/app/node_modules'
+// Where the host's own scanner lives. Only a machine with a Harness install
+// has one, so it is taken from the environment; without it the host-scanner
+// section reports a skip instead of failing on someone else's path.
+const APP = process.env.DSH_APP_MODULES
 
 let failures = 0
 const check = (label, condition, detail) => {
@@ -40,7 +43,9 @@ check('that file exists', fs.existsSync(clientFile), clientFile)
 
 // Ask the host's own resolver to do the work.
 console.log('\nhost scanner:')
-try {
+if (APP === undefined || !fs.existsSync(path.join(APP, '@deepseek-ai', 'dsh-client-modules'))) {
+  console.log('  skipped: set DSH_APP_MODULES to <app>/node_modules to run the host scan')
+} else try {
   const mod = await import(`file:///${APP}/@deepseek-ai/dsh-client-modules/lib/index.js`)
   const { orderByModuleGraph, stripClientSuffix } = mod
 

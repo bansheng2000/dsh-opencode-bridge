@@ -61,20 +61,35 @@ console.log(`before: ${JSON.stringify(before.metrics)}`)
 const target = before.models[0]
 console.log(`probing one model: ${target.id}`)
 
-// Probe a single model so the check stays fast.
+// Probe a single model so the check stays fast. The route must answer as soon
+// as the sweep starts: it used to wait for the whole run, which held the HTTP
+// response open for tens of seconds and made the button look stuck.
+const beforeProbe = Date.now()
 const started = await fetch(PROBE, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ model: target.id }),
 }).then(r => r.json())
-console.log(`probe response: ${JSON.stringify(started)}`)
+const elapsedMs = Date.now() - beforeProbe
+console.log(`probe response after ${elapsedMs}ms: ${JSON.stringify(started)}`)
 
-const after = await fetch(STATUS).then(r => r.json())
+// Follow the sweep through the status document — the same thing the settings
+// page polls — instead of through the POST reply.
+let after = await fetch(STATUS).then(r => r.json())
+const sweepDeadline = Date.now() + 600_000
+while (after.probe.running && Date.now() < sweepDeadline) {
+  await new Promise(resolve => setTimeout(resolve, 1000))
+  after = await fetch(STATUS).then(r => r.json())
+}
 console.log(`after:  ${JSON.stringify(after.metrics)}`)
 const probed = after.models.find(model => model.id === target.id)
 console.log(`result: ${JSON.stringify(probed?.lastResult)}`)
 
-const ok = after.metrics.available >= 1
+const ok = elapsedMs < 5_000
+  && started.started === true
+  && started.pending === true
+  && started.count === 1
+  && after.metrics.available >= 1
   && probed?.lastResult?.ok === true
   && probed?.lastResult?.source === 'probe'
   && Number.isFinite(probed?.lastResult?.durationMs)

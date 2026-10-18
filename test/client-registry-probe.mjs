@@ -14,16 +14,21 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
-const HOME = process.argv[2] ?? 'D:\\deep seek harness\\dsh-home'
+const HOME = process.argv[2] ?? process.env.DSH_HOME ?? path.join(process.env.USERPROFILE ?? '', '.dsh')
 const PLUGIN = process.argv[3] ?? 'dsh-opencode-bridge'
-const APP = 'D:/DSH/DSH Desktop/resources/app/node_modules'
+const APP = process.env.DSH_APP_MODULES
 
 const installed = path.join(HOME, 'profiles', 'desktop', 'node_modules', PLUGIN)
 console.log(`installed at: ${installed}`)
 console.log(`  package.json exists: ${fs.existsSync(path.join(installed, 'package.json'))}`)
 
-const mod = await import(`file:///${APP}/@deepseek-ai/dsh-client-modules/lib/index.js`)
-const proto = mod.ClientModuleRegistry.prototype
+let proto
+if (APP === undefined || !fs.existsSync(path.join(APP, '@deepseek-ai', 'dsh-client-modules'))) {
+  console.log('(no host scanner: set DSH_APP_MODULES to <app>/node_modules; the shape check below still runs)')
+} else {
+  const mod = await import(`file:///${APP}/@deepseek-ai/dsh-client-modules/lib/index.js`)
+  proto = mod.ClientModuleRegistry.prototype
+}
 
 // `locatePkgJson` needs only a loader face; give it the minimum it reads.
 const fakeSelf = {
@@ -37,7 +42,9 @@ const loaderName = PLUGIN
 
 console.log('\n--- locatePkgJson ---')
 let located
-try {
+if (proto === undefined) {
+  console.log('skipped: the host scanner is what this section probes')
+} else try {
   located = proto.locatePkgJson.call(fakeSelf, loaderName, baseUrl)
   console.log(JSON.stringify(located, null, 2))
 } catch (error) {
@@ -45,7 +52,9 @@ try {
 }
 
 console.log('\n--- resolveMeta ---')
-try {
+if (proto === undefined) {
+  console.log('skipped: the host scanner is what this section probes')
+} else try {
   const meta = proto.resolveMeta.call(fakeSelf, loaderName, baseUrl)
   console.log(JSON.stringify(meta, null, 2))
 } catch (error) {
@@ -69,7 +78,7 @@ if (fs.existsSync(clientPath)) {
   console.log(`id matches  = ${id === pkg.name}`)
 }
 
-const ok = located !== undefined
+const ok = (proto === undefined || located !== undefined)
   && pkg.dsh?.client?.platform === 'web'
   && fs.existsSync(clientPath)
   && /__ModuleLoader__\.load/.test(fs.readFileSync(clientPath, 'utf8'))

@@ -1,6 +1,6 @@
 {
   "name": "dsh-opencode-bridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Run OpenCode Zen's free models inside DeepSeek Harness through a managed, isolated OpenCode runtime.",
   "license": "MIT",
   "author": "bansheng2000",
@@ -40,7 +40,7 @@
   },
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": ">=0.1.1-rc.1 <0.2.0"
+    "dsh": ">=0.1.1-rc.1 <0.3.0-0"
   },
   "keywords": [
     "dsh-plugin",
@@ -62,11 +62,11 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-llm": ">=0.1.1-rc.1 <0.2.0",
-    "@deepseek-ai/dsh-llm-pi-ai": ">=0.1.1-rc.1 <0.2.0",
-    "@deepseek-ai/dsh-settings": ">=0.1.1-rc.1 <0.2.0",
+    "@deepseek-ai/dsh-llm": ">=0.1.1-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-llm-pi-ai": ">=0.1.1-rc.1 <0.3.0-0",
+    "@deepseek-ai/dsh-settings": ">=0.1.1-rc.1 <0.3.0-0",
     "@deepseek-ai/schemastery": "^3.18.1",
-    "@earendil-works/pi-ai": ">=0.82.1 <0.86.0"
+    "@earendil-works/pi-ai": ">=0.82.1 <2.0.0"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {

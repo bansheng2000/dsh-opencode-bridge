@@ -190,13 +190,28 @@ const STATUS = {
   ],
 }
 
+const fetchCalls = []
 const sandbox = {
   console, setTimeout, clearTimeout, setInterval, clearInterval, queueMicrotask,
-  fetch: async url => ({
-    ok: true,
-    status: 200,
-    json: async () => (String(url).includes('/status') ? STATUS : { ok: true, count: 2 }),
-  }),
+  fetch: async (url, init) => {
+    fetchCalls.push({ url: String(url), body: init?.body })
+    // Clearing local data is phased: the first call only asks for the size.
+    if (String(url).includes('/runtime/uninstall')) {
+      const dryRun = JSON.parse(init?.body ?? '{}').dryRun === true
+      return {
+        ok: true,
+        status: 200,
+        json: async () => (dryRun
+          ? { ok: true, dryRun: true, bytes: 220200960, files: 412 }
+          : { ok: true, dryRun: false, bytes: 220200960, files: 412, removed: ['runtime', 'opencode', 'opencode.log'] }),
+      }
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => (String(url).includes('/status') ? STATUS : { ok: true, count: 2 }),
+    }
+  },
   document: undefined,
   window: { __ModuleLoader__: { load: r => { sandbox.__reg = r } } },
 }
@@ -400,6 +415,45 @@ if (openItem !== undefined) {
 // The old layout appended the detail after the entire list.
 const strayAfterList = (openedTree.children ?? []).find(c => c?.props?.className === 'dsm-ocxb-detail')
 check('no detail is appended after the whole list', strayAfterList === undefined)
+
+// --- Clearing local data takes two clicks --------------------------------
+console.log('\nclear local data:')
+
+/** Every button in the rendered tree whose text contains `label`. */
+function buttonWith(root, label) {
+  let found
+  walk(root, node => {
+    if (found !== undefined || node.type !== 'button') return
+    if (texts(node).join(' ').includes(label)) found = node
+  })
+  return found
+}
+
+/** Let the component's promises settle and re-render. */
+async function settle() {
+  for (let i = 0; i < 5; i++) {
+    await new Promise(resolve => setImmediate(resolve))
+    tree = page(injected)
+  }
+}
+
+const clearButton = buttonWith(tree, '清除本机数据')
+check('the clear-data button is offered', clearButton !== undefined)
+
+clearButton?.props.onClick()
+await settle()
+const confirmButton = buttonWith(tree, '确认删除')
+check('the first click only asks for confirmation', confirmButton !== undefined)
+check('the ask names the size', texts(tree).join(' ').includes('210.0 MB'), texts(tree).join(' ').slice(0, 160))
+check('the first click deletes nothing',
+  fetchCalls.filter(call => call.body === '{"dryRun":false}').length === 0)
+
+confirmButton?.props.onClick()
+await settle()
+check('the confirm click deletes',
+  fetchCalls.some(call => call.url.includes('/runtime/uninstall') && call.body === '{"dryRun":false}'))
+check('the result reports what was removed', texts(tree).join(' ').includes('已清除'), texts(tree).join(' ').slice(0, 160))
+check('the confirm row is gone after the click', buttonWith(tree, '确认删除') === undefined)
 
 console.log(failures === 0 ? '\nRENDER CHECK OK' : `\nRENDER CHECK FAILED (${failures})`)
 process.exit(failures === 0 ? 0 : 1)

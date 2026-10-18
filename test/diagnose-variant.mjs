@@ -8,12 +8,14 @@
  */
 
 import fs from 'node:fs'
+import path from 'node:path'
 import { findRuntime, startBackend } from '../lib/runtime.js'
 import { prepare } from '../lib/protocol.js'
 import { reasoningEfforts } from '../lib/reasoning.js'
 
-const dataDir = 'D:\\deep seek harness\\dsh-home\\opencode-bridge'
-const log = fs.createWriteStream(`${dataDir}\\variant.log`, { flags: 'a' })
+const home = process.env.DSH_HOME ?? path.join(process.env.USERPROFILE ?? '', '.dsh')
+const dataDir = process.env.OPENCODE_BRIDGE_LIVE_DIR ?? path.join(home, 'opencode-bridge')
+const log = fs.createWriteStream(path.join(dataDir, 'variant.log'), { flags: 'a' })
 const rt = await startBackend(await findRuntime(dataDir, () => {}), dataDir, log)
 const models = await rt.backend.models()
 
