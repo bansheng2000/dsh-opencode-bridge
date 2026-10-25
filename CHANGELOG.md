@@ -1,5 +1,15 @@
 # Changelog
 
+## 未发布
+
+### 修复
+
+- **思考模型不再被强制 tool_choice**（lib/protocol.js、lib/backend.js）：运行时把 JSON-schema 的 format 实现成「强制调用 StructuredOutput」，而思考中的模型上游只接受自动选择工具，于是每个带工具的回合都以 "Upstream request failed: [invalid_request_error] Thinking mode does not support this tool_choice" 收场（2026-10-19 单小时 10 次，全部 agent=buddy-bridge + 免费 thinking 模型）。现在 prepare() 按 model.reasoning 判定是否走结构化输出：思考模型下发纯文本信封指令、不再带 format；正确性仍由两道既有兜底保证 —— decode() 本来就同时接受纯文本信封，信封不合格式时还有一次纠正重试。非思考模型行为不变。
+
+### 测试
+
+- 新增 test/payload-shape.test.js（2 例：真实 socket 上核对下发的 payload —— 思考模型没有 format 且提示词要求纯文本、非思考模型仍带 json_schema，两条路径都能解出答案），并在 test/protocol.test.js 钉住 structured 标记的两种取值。
+
 ## 0.2.2
 
 ### 修复
