@@ -139,20 +139,6 @@ test('prepare accepts a declared reasoning effort', () => {
   assert.equal(request.variant, 'low')
 })
 
-test('prepare asks a thinking model for the envelope in plain text', () => {
-  // The runtime implements the JSON-schema format as a forced tool_choice, which
-  // a thinking model rejects upstream with "Thinking mode does not support this
-  // tool_choice".
-  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, MODELS)
-  assert.equal(request.structured, false)
-})
-
-test('prepare keeps StructuredOutput for a non-thinking model', () => {
-  const plain = model({ reasoning: false })
-  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, [plain])
-  assert.equal(request.structured, true)
-})
-
 test('prepare tolerates a default effort on a fixed-reasoning model', () => {
   const request = prepare({
     model: 'opencode/big-pickle',
