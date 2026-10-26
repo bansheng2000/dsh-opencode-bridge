@@ -178,6 +178,49 @@ test('decode parses stringified arguments', () => {
   assert.equal(JSON.parse(message.tool_calls[0].function.arguments).file_path, '/a.txt')
 })
 
+test('decode reads a calls field the model wrote as a JSON string', () => {
+  const tools = [{ type: 'function', function: { name: 'Read', parameters: { type: 'object', properties: { file_path: { type: 'string' } } } } }]
+  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }], tools }, MODELS)
+  const message = decode(JSON.stringify({
+    content: '',
+    calls: '[{"name":"Read","arguments":{"file_path":"/a.txt"}}]',
+  }), request)
+  assert.equal(message.tool_calls.length, 1)
+  assert.equal(JSON.parse(message.tool_calls[0].function.arguments).file_path, '/a.txt')
+})
+
+test('decode reads a calls field holding one call object as a string', () => {
+  const tools = [{ type: 'function', function: { name: 'Read', parameters: { type: 'object', properties: { file_path: { type: 'string' } } } } }]
+  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }], tools }, MODELS)
+  const message = decode(JSON.stringify({
+    content: '',
+    calls: '{"name":"Read","arguments":{"file_path":"/a.txt"}}',
+  }), request)
+  assert.equal(message.tool_calls.length, 1)
+})
+
+test('decode reads an empty calls string as no calls', () => {
+  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, MODELS)
+  const message = decode('{"content":"hi","calls":""}', request)
+  assert.equal(message.content, 'hi')
+  assert.equal(message.tool_calls, undefined)
+})
+
+test('decode keeps the answer when the calls string is unreadable', () => {
+  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, MODELS)
+  const message = decode('{"content":"hi","calls":"[{name: Read, arguments: {}}"}', request)
+  assert.equal(message.content, 'hi')
+  assert.equal(message.tool_calls, undefined)
+})
+
+test('decode still rejects when nothing usable is left', () => {
+  const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, MODELS)
+  assert.throws(
+    () => decode('{"calls":"[{name: Read, arguments: {}"}', request),
+    error => error.code === 'invalid_model_output',
+  )
+})
+
 test('decode rejects a tool the request did not offer', () => {
   const request = prepare({ model: 'opencode/big-pickle', messages: [{ role: 'user', content: 'hi' }] }, MODELS)
   assert.throws(
