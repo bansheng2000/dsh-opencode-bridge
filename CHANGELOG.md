@@ -4,11 +4,13 @@
 
 ### 修复
 
-- **思考模型不再被强制 tool_choice**（lib/protocol.js、lib/backend.js）：运行时把 JSON-schema 的 format 实现成「强制调用 StructuredOutput」，而思考中的模型上游只接受自动选择工具，于是每个带工具的回合都以 "Upstream request failed: [invalid_request_error] Thinking mode does not support this tool_choice" 收场（2026-10-19 单小时 10 次，全部 agent=buddy-bridge + 免费 thinking 模型）。现在 prepare() 按 model.reasoning 判定是否走结构化输出：思考模型下发纯文本信封指令、不再带 format；正确性仍由两道既有兜底保证 —— decode() 本来就同时接受纯文本信封，信封不合格式时还有一次纠正重试。非思考模型行为不变。
+- **思考模型不再被强制 tool_choice**（lib/backend.js）：运行时把 JSON-schema 的 format 实现成「强制调用 StructuredOutput」，而思考中的模型上游只接受自动选择工具，于是带工具的回合以 "Upstream request failed: [invalid_request_error] Thinking mode does not support this tool_choice" 收场（2026-10-19 单小时 10 次，全部 agent=buddy-bridge + 免费 thinking 模型）。现在请求照常下发 format，只有在**上游真的回了这条 400** 时才去掉 format、改成纯文本信封指令并重试同一轮；这次放宽不消耗那唯一一次格式纠正重试。按 model.reasoning 预判的做法已放弃（会让本来正常的模型改走纯文本路径，反而更容易出信封错误）。
+- **模型把 calls 写成字符串时不再误判信封无效**（lib/protocol.js）：免费模型常把信封的 calls 字段序列化成字符串（"[{...}]" 或单个对象 "{...}"），原来只认数组，直接报「模型未返回合法的信封 JSON，未执行任何工具」。新增 parseCalls() 容错：空串→无调用、数组→数组、单个对象→[对象]；calls 读不出但 content 是有效正文时按「无工具调用」处理，强制工具的场景仍由既有检查拦成「模型遗漏了必需的工具调用」。
 
 ### 测试
 
-- 新增 test/payload-shape.test.js（2 例：真实 socket 上核对下发的 payload —— 思考模型没有 format 且提示词要求纯文本、非思考模型仍带 json_schema，两条路径都能解出答案），并在 test/protocol.test.js 钉住 structured 标记的两种取值。
+- test/payload-shape.test.js（3 例）：默认仍下发 json_schema format；上游拒绝后重试不带 format 且仍能解出答案；放宽不吞掉那唯一一次格式纠正。
+- test/protocol.test.js 新增 5 例，覆盖 calls 被写成字符串的各种形态。
 
 ## 0.2.2
 
