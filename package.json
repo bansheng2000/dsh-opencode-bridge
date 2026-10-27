@@ -1,6 +1,6 @@
 {
   "name": "dsh-opencode-bridge",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Run OpenCode Zen's free models inside DeepSeek Harness through a managed, isolated OpenCode runtime.",
   "license": "MIT",
   "author": "bansheng2000",
